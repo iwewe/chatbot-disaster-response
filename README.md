@@ -16,6 +16,28 @@ Sistem ini dirancang untuk **situasi emergency aktif** dimana:
 - ✅ Deployment harus MUDAH (one-command setup)
 - ✅ Sistem harus RELIABLE (auto-recovery, graceful degradation)
 
+---
+
+## ⚡ Quick Start - Pilih Deployment Mode
+
+Sistem ini punya **2 mode** tergantung resource server:
+
+### 📍 FULL VERSION (AI-Powered) - Recommended
+**Untuk:** Server dengan 16GB+ RAM, 8+ cores
+```bash
+curl -fsSL https://raw.githubusercontent.com/iwewe/chatbot-disaster-response/main/scripts/install.sh | bash
+```
+
+### 📍 LIGHT VERSION (Rule-Based) - Emergency Mode
+**Untuk:** Server minimal 4GB RAM, 2 cores - **Deploy dalam 10 menit!**
+```bash
+curl -fsSL https://raw.githubusercontent.com/iwewe/chatbot-disaster-response/main/scripts/install-light.sh | bash
+```
+
+**👉 Baca lengkap:** [Deployment Options Guide](docs/DEPLOYMENT_OPTIONS.md)
+
+---
+
 ## 🌟 Fitur Utama
 
 ### 1. WhatsApp Chatbot dengan AI

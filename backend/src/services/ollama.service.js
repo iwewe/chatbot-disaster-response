@@ -8,6 +8,12 @@ class OllamaService {
     this.model = config.ollama.model;
     this.timeout = config.ollama.timeout;
     this.fallbackEnabled = config.ollama.fallbackEnabled;
+    // Check if Ollama is intentionally disabled (for light deployment)
+    this.isDisabled = this.baseUrl.includes('disabled') || this.baseUrl === '';
+
+    if (this.isDisabled) {
+      logger.warn('Ollama is DISABLED - using rule-based extraction only');
+    }
   }
 
   /**
@@ -69,6 +75,12 @@ class OllamaService {
    * Extract report data from natural language message
    */
   async extractReportData(message, userContext = {}) {
+    // If Ollama is disabled, use rule-based directly
+    if (this.isDisabled) {
+      logger.info('Ollama disabled - using rule-based extraction');
+      return this.fallbackExtraction(message);
+    }
+
     const prompt = this.buildExtractionPrompt(message, userContext);
 
     try {
@@ -316,6 +328,16 @@ Ekstrak informasi dan berikan output dalam format JSON:`;
    * Health check
    */
   async healthCheck() {
+    // If Ollama is disabled, return disabled status (not an error)
+    if (this.isDisabled) {
+      return {
+        status: 'disabled',
+        available: false,
+        mode: 'rule-based',
+        message: 'Ollama intentionally disabled - using rule-based extraction',
+      };
+    }
+
     try {
       const response = await axios.get(`${this.baseUrl}/api/tags`, {
         timeout: 5000,
