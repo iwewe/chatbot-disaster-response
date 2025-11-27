@@ -219,7 +219,7 @@ Lihat: `backend/prisma/schema.prisma`
 ## 🔐 Security
 
 - JWT authentication untuk API access
-- Role-based authorization (ADMIN, PMI_BNPB, COORDINATOR, VOLUNTEER)
+- Role-based authorization (ADMIN, PMI, BNPB, BPBD COORDINATOR, VOLUNTEER)
 - Data encryption at rest (PostgreSQL SSL)
 - Rate limiting (100 req/min per IP)
 - Audit logging untuk semua aksi penting
@@ -393,10 +393,10 @@ MIT License - see [LICENSE](LICENSE) file
 
 **For technical issues:**
 - GitHub Issues: [repository]/issues
-- Email: [insert email]
+- Email: maksum@combine.id
 
 **For emergency deployment assistance:**
-- Contact: [insert emergency contact]
+- Contact: maksum@combine.id
 - Available: 24/7 during disaster response
 
 ---
