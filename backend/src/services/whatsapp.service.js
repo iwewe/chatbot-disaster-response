@@ -179,20 +179,87 @@ class WhatsAppService {
       const message = value.messages[0];
       const contact = value.contacts?.[0];
 
-      // Only process text messages for now
-      if (message.type !== 'text') {
-        logger.warn('Non-text message received', { type: message.type });
-        return null;
-      }
-
-      return {
+      const baseMessage = {
         messageId: message.id,
         from: message.from,
         name: contact?.profile?.name || '',
         timestamp: message.timestamp,
-        text: message.text.body,
         type: message.type,
       };
+
+      // Handle different message types
+      switch (message.type) {
+        case 'text':
+          return {
+            ...baseMessage,
+            text: message.text.body,
+          };
+
+        case 'image':
+          return {
+            ...baseMessage,
+            text: message.image.caption || '',
+            media: {
+              type: 'IMAGE',
+              id: message.image.id,
+              mimeType: message.image.mime_type,
+              sha256: message.image.sha256,
+            },
+          };
+
+        case 'video':
+          return {
+            ...baseMessage,
+            text: message.video.caption || '',
+            media: {
+              type: 'VIDEO',
+              id: message.video.id,
+              mimeType: message.video.mime_type,
+              sha256: message.video.sha256,
+            },
+          };
+
+        case 'audio':
+          return {
+            ...baseMessage,
+            text: '', // Audio doesn't have caption
+            media: {
+              type: 'AUDIO',
+              id: message.audio.id,
+              mimeType: message.audio.mime_type,
+              sha256: message.audio.sha256,
+            },
+          };
+
+        case 'document':
+          return {
+            ...baseMessage,
+            text: message.document.caption || '',
+            media: {
+              type: 'DOCUMENT',
+              id: message.document.id,
+              mimeType: message.document.mime_type,
+              filename: message.document.filename,
+              sha256: message.document.sha256,
+            },
+          };
+
+        case 'voice':
+          return {
+            ...baseMessage,
+            text: '', // Voice note doesn't have caption
+            media: {
+              type: 'AUDIO',
+              id: message.voice.id,
+              mimeType: message.voice.mime_type,
+              sha256: message.voice.sha256,
+            },
+          };
+
+        default:
+          logger.warn('Unsupported message type', { type: message.type });
+          return null;
+      }
     } catch (error) {
       logger.error('Failed to parse incoming message', { error: error.message });
       return null;

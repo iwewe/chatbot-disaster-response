@@ -2,6 +2,7 @@ import express from 'express';
 import * as webhookController from '../controllers/webhook.controller.js';
 import * as apiController from '../controllers/api.controller.js';
 import * as authController from '../controllers/auth.controller.js';
+import * as mediaController from '../controllers/media.controller.js';
 import { authenticate, authorize } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
@@ -51,6 +52,22 @@ router.get(
   authenticate,
   authorize('ADMIN', 'PMI_BNPB'),
   apiController.exportReports
+);
+
+// Media routes
+router.get('/api/media/:id', authenticate, mediaController.getMediaById);
+router.get('/api/reports/:reportId/media', authenticate, mediaController.getReportMedia);
+router.delete(
+  '/api/media/:id',
+  authenticate,
+  authorize('ADMIN'),
+  mediaController.deleteMedia
+);
+router.get(
+  '/api/media/stats/storage',
+  authenticate,
+  authorize('ADMIN'),
+  mediaController.getStorageStats
 );
 
 export default router;

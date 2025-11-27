@@ -114,6 +114,7 @@ model Report {
   persons         ReportPerson[]
   needs           ReportNeed[]
   actions         ReportAction[]
+  media           ReportMedia[]
   auditLogs       AuditLog[]
 
   @@index([reportNumber])
@@ -241,6 +242,45 @@ model ReportAction {
   createdAt       DateTime    @default(now())
 
   @@index([reportId])
+}
+
+// ============================================
+// MEDIA ATTACHMENTS (Foto/Video untuk Verifikasi)
+// ============================================
+
+enum MediaType {
+  IMAGE       // Foto (JPEG, PNG)
+  VIDEO       // Video (MP4, 3GP)
+  AUDIO       // Voice note
+  DOCUMENT    // PDF, DOC, dll
+}
+
+model ReportMedia {
+  id              String      @id @default(cuid())
+  reportId        String
+  report          Report      @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  // Media metadata
+  mediaType       MediaType
+  fileName        String      // Original filename
+  filePath        String      // Path di storage (local or cloud)
+  fileSize        Int?        // Size in bytes
+  mimeType        String?     // e.g., image/jpeg, video/mp4
+
+  // WhatsApp specific
+  whatsappMediaId String?     // Media ID dari WhatsApp
+  caption         String?     // Caption yang dikirim user
+
+  // Upload info
+  uploadedBy      String      // User ID yang upload
+  uploadedAt      DateTime    @default(now())
+
+  // Optional: AI-generated description (untuk foto)
+  aiDescription   String?     // Deskripsi otomatis dari AI vision (future)
+
+  @@index([reportId])
+  @@index([mediaType])
+  @@index([uploadedAt])
 }
 
 // ============================================

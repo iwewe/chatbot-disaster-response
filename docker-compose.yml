@@ -99,6 +99,7 @@ services:
         condition: service_started
     volumes:
       - ./backend/logs:/app/logs
+      - media_data:/app/media
     networks:
       - emergency_network
     healthcheck:
@@ -144,4 +145,6 @@ volumes:
   redis_data:
     driver: local
   ollama_data:
+    driver: local
+  media_data:
     driver: local

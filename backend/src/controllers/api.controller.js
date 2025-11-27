@@ -90,6 +90,9 @@ export async function getReportById(req, res) {
         },
         persons: true,
         needs: true,
+        media: {
+          orderBy: { uploadedAt: 'desc' },
+        },
         actions: {
           orderBy: { createdAt: 'desc' },
         },

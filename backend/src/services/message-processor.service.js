@@ -2,6 +2,7 @@ import prisma from '../config/database.js';
 import ollamaService from './ollama.service.js';
 import whatsappService from './whatsapp.service.js';
 import telegramService from './telegram.service.js';
+import mediaService from './media.service.js';
 import logger from '../utils/logger.js';
 import config from '../config/env.js';
 
@@ -10,10 +11,14 @@ class MessageProcessorService {
    * Process incoming WhatsApp message
    */
   async processMessage(incomingMessage) {
-    const { from, text, messageId, name } = incomingMessage;
+    const { from, text, messageId, name, media } = incomingMessage;
 
     try {
-      logger.report('Processing incoming message', { from, text: text.substring(0, 100) });
+      logger.report('Processing incoming message', {
+        from,
+        text: text?.substring(0, 100),
+        hasMedia: !!media
+      });
 
       // Mark message as read
       await whatsappService.markAsRead(messageId);
@@ -26,9 +31,9 @@ class MessageProcessorService {
 
       // Process based on chat state
       if (chatState && chatState.currentIntent) {
-        return await this.handleFollowUp(user, text, chatState);
+        return await this.handleFollowUp(user, text, chatState, media);
       } else {
-        return await this.handleNewReport(user, text);
+        return await this.handleNewReport(user, text, media);
       }
     } catch (error) {
       logger.error('Failed to process message', { from, error: error.message });
@@ -48,12 +53,15 @@ class MessageProcessorService {
   /**
    * Handle new report (first message)
    */
-  async handleNewReport(user, text) {
+  async handleNewReport(user, text, media = null) {
     try {
-      // Extract data using AI
-      logger.ai('Extracting report data', { userId: user.id });
+      // If only media without text, use media caption or generic message
+      const messageText = text || (media ? 'Laporan dengan media terlampir' : '');
 
-      const extractionResult = await ollamaService.extractReportData(text, {
+      // Extract data using AI
+      logger.ai('Extracting report data', { userId: user.id, hasMedia: !!media });
+
+      const extractionResult = await ollamaService.extractReportData(messageText, {
         previousReport: null,
         userTrustLevel: user.trustLevel,
       });
@@ -65,9 +73,15 @@ class MessageProcessorService {
       const data = extractionResult.data;
 
       // Validate intent
-      if (data.intent === 'unknown') {
+      if (data.intent === 'unknown' && !media) {
         await whatsappService.sendErrorMessage(user.phoneNumber, 'invalid_format');
         return { success: false, reason: 'unknown_intent' };
+      }
+
+      // If has media but unknown intent, assume it's a report (with verification needed)
+      if (data.intent === 'unknown' && media) {
+        data.intent = 'korban'; // Default to korban for media-only reports
+        data.summary = 'Laporan dengan media terlampir. Menunggu verifikasi admin.';
       }
 
       // Check for missing critical fields
@@ -76,12 +90,13 @@ class MessageProcessorService {
         data.missingFields.length > 0 &&
         data.missingFields.some((f) => ['location'].includes(f));
 
-      if (hasMissingCriticalFields) {
+      if (hasMissingCriticalFields && !media) {
         // Save chat state and ask follow-up question
         await this.saveChatState(user.phoneNumber, {
           currentIntent: data.intent,
           extractedData: data,
           missingFields: data.missingFields,
+          media,  // Save media in chat state
         });
 
         const question = await ollamaService.generateFollowUpQuestion(data);
@@ -92,7 +107,7 @@ class MessageProcessorService {
       }
 
       // Create report
-      const report = await this.createReport(user, data, text);
+      const report = await this.createReport(user, data, messageText, media);
 
       // Send confirmation to user
       await whatsappService.sendReportConfirmation(user.phoneNumber, report);
@@ -172,7 +187,7 @@ class MessageProcessorService {
   /**
    * Create report in database
    */
-  async createReport(user, data, rawMessage) {
+  async createReport(user, data, rawMessage, media = null) {
     // Determine status based on user trust level
     const status =
       user.role === 'VOLUNTEER' || user.trustLevel >= config.system.autoVerifyTrustLevel
@@ -258,15 +273,63 @@ class MessageProcessorService {
           source: 'whatsapp',
           aiExtracted: true,
           fallback: data.fallback || false,
+          hasMedia: !!media,
         },
       },
     });
+
+    // Download and save media if present
+    if (media) {
+      try {
+        logger.info('Processing media attachment', {
+          reportId: report.id,
+          mediaType: media.type,
+          mediaId: media.id,
+        });
+
+        const downloadResult = await mediaService.downloadWhatsAppMedia(media.id, media.type);
+
+        if (downloadResult.success) {
+          // Save media record to database
+          await prisma.reportMedia.create({
+            data: {
+              reportId: report.id,
+              mediaType: media.type,
+              fileName: downloadResult.fileName,
+              filePath: downloadResult.filePath,
+              fileSize: downloadResult.fileSize,
+              mimeType: downloadResult.mimeType,
+              whatsappMediaId: media.id,
+              caption: data.summary || null,
+              uploadedBy: user.id,
+            },
+          });
+
+          logger.info('Media saved successfully', {
+            reportId: report.id,
+            fileName: downloadResult.fileName,
+          });
+        } else {
+          logger.error('Failed to download media', {
+            reportId: report.id,
+            error: downloadResult.error,
+          });
+        }
+      } catch (error) {
+        logger.error('Media processing error', {
+          reportId: report.id,
+          error: error.message,
+        });
+        // Don't fail report creation if media processing fails
+      }
+    }
 
     logger.report('Report created', {
       reportNumber,
       type: report.type,
       urgency: report.urgency,
       status,
+      hasMedia: !!media,
     });
 
     return report;
