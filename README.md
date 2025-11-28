@@ -25,13 +25,27 @@ Sistem ini punya **2 mode** tergantung resource server:
 ### 📍 FULL VERSION (AI-Powered) - Recommended
 **Untuk:** Server dengan 16GB+ RAM, 8+ cores
 ```bash
-curl -fsSL https://raw.githubusercontent.com/iwewe/chatbot-disaster-response/main/scripts/install.sh | bash
+# Option A: Git Clone (Recommended)
+git clone https://github.com/iwewe/chatbot-disaster-response.git
+cd chatbot-disaster-response
+git checkout claude/emergency-chatbot-database-015rFTqBPiJaT7MnsyVpSXpf
+bash scripts/deploy.sh
+
+# Option B: Curl (after merge to main)
+# curl -fsSL https://raw.githubusercontent.com/iwewe/chatbot-disaster-response/main/scripts/install.sh | bash
 ```
 
 ### 📍 LIGHT VERSION (Rule-Based) - Emergency Mode
 **Untuk:** Server minimal 4GB RAM, 2 cores - **Deploy dalam 10 menit!**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/iwewe/chatbot-disaster-response/main/scripts/install-light.sh | bash
+# Option A: Git Clone (Recommended for now)
+git clone https://github.com/iwewe/chatbot-disaster-response.git
+cd chatbot-disaster-response
+git checkout claude/emergency-chatbot-database-015rFTqBPiJaT7MnsyVpSXpf
+bash scripts/deploy-light.sh
+
+# Option B: Curl (after merge to main)
+# curl -fsSL https://raw.githubusercontent.com/iwewe/chatbot-disaster-response/main/scripts/install-light.sh | bash
 ```
 
 **👉 Baca lengkap:** [Deployment Options Guide](docs/DEPLOYMENT_OPTIONS.md)
