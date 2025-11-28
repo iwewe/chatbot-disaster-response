@@ -67,14 +67,14 @@ echo "📥 Downloading project..."
 
 if [ -d "$INSTALL_DIR" ]; then
     echo "⚠️  Directory $INSTALL_DIR already exists"
-    read -p "Remove and reinstall? (y/N) " -n 1 -r
+    read -t 5 -p "Remove and reinstall? (Y/n) " -n 1 -r || true
     echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        rm -rf "$INSTALL_DIR"
-    else
+    if [[ $REPLY =~ ^[Nn]$ ]]; then
         echo "Installation cancelled"
         exit 0
     fi
+    echo "▶️  Removing existing installation..."
+    rm -rf "$INSTALL_DIR"
 fi
 
 mkdir -p "$INSTALL_DIR"

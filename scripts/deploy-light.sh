@@ -72,12 +72,13 @@ echo "  ⚠️  Less intelligent extraction (keyword-based only)"
 echo "  ⚠️  May miss complex reports"
 echo "  ⚠️  Requires clearer message format from users"
 echo ""
-read -p "Continue with light deployment? (y/N) " -n 1 -r
+read -t 5 -p "Continue with light deployment? (Y/n) " -n 1 -r || true
 echo
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+if [[ $REPLY =~ ^[Nn]$ ]]; then
     echo "Deployment cancelled."
     exit 0
 fi
+echo "▶️  Proceeding with deployment..."
 
 # Pull images
 echo ""
