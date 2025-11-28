@@ -123,47 +123,12 @@ echo "✅ Project downloaded to: $INSTALL_DIR"
 echo ""
 echo "⚙️  Setting up configuration..."
 
-if [ ! -f .env ]; then
-    cp .env.example .env
-    echo "✅ Created .env file"
-fi
+# Make setup script executable
+chmod +x scripts/setup-env.sh
 
-# Interactive configuration
-echo ""
-echo "📝 Configuration Setup"
-echo "======================="
-echo ""
-echo "Please provide the following information:"
-echo ""
-
-read -p "WhatsApp Phone Number ID: " WHATSAPP_PHONE_NUMBER_ID
-read -p "WhatsApp Access Token: " WHATSAPP_ACCESS_TOKEN
-read -p "WhatsApp Verify Token (create a random string): " WHATSAPP_VERIFY_TOKEN
-read -p "WhatsApp Business Account ID: " WHATSAPP_BUSINESS_ACCOUNT_ID
-read -p "Telegram Bot Token: " TELEGRAM_BOT_TOKEN
-read -p "Telegram Admin Chat ID: " TELEGRAM_ADMIN_CHAT_ID
-read -p "Your Domain or IP (e.g., https://chatbot.yourdomain.com or http://YOUR_IP:3000): " API_BASE_URL
-
-# Generate JWT secret
-JWT_SECRET=$(openssl rand -hex 32)
-
-# Update .env
-sed -i "s|WHATSAPP_PHONE_NUMBER_ID=.*|WHATSAPP_PHONE_NUMBER_ID=$WHATSAPP_PHONE_NUMBER_ID|" .env
-sed -i "s|WHATSAPP_ACCESS_TOKEN=.*|WHATSAPP_ACCESS_TOKEN=$WHATSAPP_ACCESS_TOKEN|" .env
-sed -i "s|WHATSAPP_VERIFY_TOKEN=.*|WHATSAPP_VERIFY_TOKEN=$WHATSAPP_VERIFY_TOKEN|" .env
-sed -i "s|WHATSAPP_BUSINESS_ACCOUNT_ID=.*|WHATSAPP_BUSINESS_ACCOUNT_ID=$WHATSAPP_BUSINESS_ACCOUNT_ID|" .env
-sed -i "s|TELEGRAM_BOT_TOKEN=.*|TELEGRAM_BOT_TOKEN=$TELEGRAM_BOT_TOKEN|" .env
-sed -i "s|TELEGRAM_ADMIN_CHAT_ID=.*|TELEGRAM_ADMIN_CHAT_ID=$TELEGRAM_ADMIN_CHAT_ID|" .env
-sed -i "s|API_BASE_URL=.*|API_BASE_URL=$API_BASE_URL|" .env
-sed -i "s|JWT_SECRET=.*|JWT_SECRET=$JWT_SECRET|" .env
-
-# Set light mode
-echo "" >> .env
-echo "# Light deployment mode" >> .env
-echo "OLLAMA_BASE_URL=http://disabled:11434" >> .env
-echo "OLLAMA_FALLBACK_ENABLED=true" >> .env
-
-echo "✅ Configuration saved (Light mode enabled)"
+# Run interactive setup with LIGHT mode pre-selected
+export DEPLOY_MODE_DEFAULT=1
+bash scripts/setup-env.sh
 
 # Make scripts executable
 chmod +x scripts/*.sh
