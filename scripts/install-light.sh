@@ -12,7 +12,9 @@
 set -e
 
 REPO_URL="https://github.com/iwewe/chatbot-disaster-response"
-REPO_ARCHIVE="https://github.com/iwewe/chatbot-disaster-response/archive/refs/heads/main.zip"
+# Download from current active branch (change this to 'main' after merge)
+REPO_BRANCH="claude/emergency-chatbot-database-015rFTqBPiJaT7MnsyVpSXpf"
+REPO_ARCHIVE="https://github.com/iwewe/chatbot-disaster-response/archive/refs/heads/${REPO_BRANCH}.zip"
 INSTALL_DIR="$HOME/emergency-chatbot"
 
 echo "🚀 Emergency Chatbot - One-Click Installer (LIGHT)"
@@ -80,25 +82,40 @@ cd "$INSTALL_DIR"
 
 # Download using curl or wget
 if command -v curl &> /dev/null; then
-    curl -L "$REPO_ARCHIVE" -o main.zip
+    curl -L "$REPO_ARCHIVE" -o archive.zip
 elif command -v wget &> /dev/null; then
-    wget "$REPO_ARCHIVE" -O main.zip
+    wget "$REPO_ARCHIVE" -O archive.zip
 else
     echo "❌ curl or wget required"
     exit 1
 fi
 
 echo "📦 Extracting..."
-unzip -q main.zip
-# Move regular files
-mv chatbot-disaster-response-main/* . 2>/dev/null || true
-# Explicitly copy .env.example (important hidden file)
-if [ -f chatbot-disaster-response-main/.env.example ]; then
-    cp chatbot-disaster-response-main/.env.example .env.example
+unzip -q archive.zip
+
+# Auto-detect extracted directory name (GitHub creates: repo-name-branch-name)
+EXTRACTED_DIR=$(find . -maxdepth 1 -type d -name "chatbot-disaster-response-*" | head -n 1)
+
+if [ -z "$EXTRACTED_DIR" ]; then
+    echo "❌ Failed to find extracted directory"
+    exit 1
 fi
+
+echo "📂 Found: $EXTRACTED_DIR"
+
+# Move regular files
+mv "$EXTRACTED_DIR"/* . 2>/dev/null || true
+
+# Explicitly copy .env.example (important hidden file)
+if [ -f "$EXTRACTED_DIR/.env.example" ]; then
+    cp "$EXTRACTED_DIR/.env.example" .env.example
+fi
+
 # Try to move other hidden files (ignore errors for . and ..)
-mv chatbot-disaster-response-main/.* . 2>/dev/null || true
-rm -rf chatbot-disaster-response-main main.zip
+mv "$EXTRACTED_DIR"/.* . 2>/dev/null || true
+
+# Cleanup
+rm -rf "$EXTRACTED_DIR" archive.zip
 
 echo "✅ Project downloaded to: $INSTALL_DIR"
 
