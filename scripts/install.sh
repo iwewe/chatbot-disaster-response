@@ -90,7 +90,13 @@ fi
 
 echo "📦 Extracting..."
 unzip -q main.zip
-mv chatbot-disaster-response-main/* .
+# Move regular files
+mv chatbot-disaster-response-main/* . 2>/dev/null || true
+# Explicitly copy .env.example (important hidden file)
+if [ -f chatbot-disaster-response-main/.env.example ]; then
+    cp chatbot-disaster-response-main/.env.example .env.example
+fi
+# Try to move other hidden files (ignore errors for . and ..)
 mv chatbot-disaster-response-main/.* . 2>/dev/null || true
 rm -rf chatbot-disaster-response-main main.zip
 

@@ -25,6 +25,71 @@
 
 ---
 
+## 🛠️ Cara Instalasi - Pilih Metode
+
+Ada **2 metode instalasi** untuk setiap versi:
+
+### Metode 1: Git Clone (Recommended saat ini)
+
+**Gunakan jika:** Anda familiar dengan git atau branch belum merge ke `main`
+
+```bash
+# Clone repository
+git clone https://github.com/iwewe/chatbot-disaster-response.git
+cd chatbot-disaster-response
+
+# Checkout branch yang benar
+git checkout claude/emergency-chatbot-database-015rFTqBPiJaT7MnsyVpSXpf
+
+# Deploy (pilih salah satu)
+bash scripts/deploy.sh         # Full version
+bash scripts/deploy-light.sh   # Light version
+```
+
+**Yang dijalankan:** `scripts/deploy.sh` atau `scripts/deploy-light.sh`
+**Fungsi:** Deploy saja (asumsi sudah clone repo)
+
+---
+
+### Metode 2: Curl One-Liner (Akan tersedia setelah merge ke main)
+
+**Gunakan jika:** Butuh instalasi super cepat tanpa git, emergency deployment
+
+```bash
+# Full version (setelah merge ke main)
+curl -fsSL https://raw.githubusercontent.com/iwewe/chatbot-disaster-response/main/scripts/install.sh | bash
+
+# Light version (setelah merge ke main)
+curl -fsSL https://raw.githubusercontent.com/iwewe/chatbot-disaster-response/main/scripts/install-light.sh | bash
+```
+
+**Yang dijalankan:** `scripts/install.sh` atau `scripts/install-light.sh`
+**Fungsi:** Download project + deploy (all-in-one)
+
+**CATATAN:** Metode curl ini akan otomatis:
+1. Download project dari GitHub (ZIP archive)
+2. Extract ke `$HOME/emergency-chatbot`
+3. Setup `.env` dengan interactive prompts
+4. Run deployment script
+5. Start semua services
+
+---
+
+## 📝 Perbedaan Script: install vs deploy
+
+| Script | Fungsi | Kapan Digunakan |
+|--------|--------|-----------------|
+| `install.sh` | Download + Extract + Deploy (Full) | Curl one-liner, no git |
+| `install-light.sh` | Download + Extract + Deploy (Light) | Curl one-liner, no git |
+| `deploy.sh` | Deploy only (Full) | Sudah git clone |
+| `deploy-light.sh` | Deploy only (Light) | Sudah git clone |
+
+**Simple rule:**
+- ✅ Sudah `git clone`? → Pakai `deploy.sh` atau `deploy-light.sh`
+- ✅ Belum ada project sama sekali? → Pakai `install.sh` atau `install-light.sh`
+
+---
+
 ## 🎯 Kapan Pakai Yang Mana?
 
 ### ✅ Gunakan FULL VERSION jika:
