@@ -1,7 +1,6 @@
 import makeWASocket, {
   DisconnectReason,
   useMultiFileAuthState,
-  makeInMemoryStore,
   downloadMediaMessage,
 } from '@whiskeysockets/baileys';
 import { Boom } from '@hapi/boom';
@@ -32,9 +31,6 @@ class WhatsAppBaileysService {
     // Pino logger for Baileys (quiet mode)
     this.pinoLogger = pino({ level: 'silent' });
 
-    // In-memory store for better message handling
-    this.store = makeInMemoryStore({ logger: this.pinoLogger });
-
     this.initialize();
   }
 
@@ -49,9 +45,6 @@ class WhatsAppBaileysService {
         browser: ['Emergency Chatbot', 'Chrome', '120.0.0'],
         markOnlineOnConnect: true,
       });
-
-      // Bind store
-      this.store.bind(this.sock.ev);
 
       // Connection updates (QR code, connected, etc)
       this.sock.ev.on('connection.update', async (update) => {
