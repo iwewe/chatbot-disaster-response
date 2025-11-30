@@ -22,6 +22,7 @@ class WhatsAppBaileysService {
     this.isReady = false;
     this.sessionPath = path.join(__dirname, '../../baileys-session');
     this.messageHandlers = [];
+    this.retryCount = 0;
 
     // Create session directory if not exists
     if (!fs.existsSync(this.sessionPath)) {
@@ -42,15 +43,16 @@ class WhatsAppBaileysService {
         auth: state,
         printQRInTerminal: false, // We handle QR manually
         logger: this.pinoLogger,
-        browser: ['Emergency Chatbot', 'Chrome', '120.0.0'],
+        // Use realistic browser fingerprint to avoid detection
+        browser: ['Chrome (Linux)', 'Chrome', '121.0.0'],
         markOnlineOnConnect: true,
         // Connection options for better reliability
         connectTimeoutMs: 60000, // 60 seconds timeout
         defaultQueryTimeoutMs: 60000,
         keepAliveIntervalMs: 30000,
         // Retry config
-        retryRequestDelayMs: 500,
-        maxMsgRetryCount: 5,
+        retryRequestDelayMs: 2000, // Increased from 500ms to 2s
+        maxMsgRetryCount: 3, // Reduced from 5 to 3
       });
 
       // Connection updates (QR code, connected, etc)
@@ -109,7 +111,12 @@ class WhatsAppBaileysService {
           });
 
           if (shouldReconnect) {
-            setTimeout(() => this.initialize(), 5000);
+            // Exponential backoff to avoid rate limiting (10s, 20s, 40s...)
+            const retryDelay = Math.min(10000 * Math.pow(2, (this.retryCount || 0)), 60000);
+            this.retryCount = (this.retryCount || 0) + 1;
+
+            logger.info(`Retrying connection in ${retryDelay/1000}s (attempt ${this.retryCount})...`);
+            setTimeout(() => this.initialize(), retryDelay);
           } else {
             logger.info('WhatsApp Baileys logged out. Delete session to re-authenticate.');
             this.isReady = false;
@@ -118,6 +125,7 @@ class WhatsAppBaileysService {
           logger.info('✅ WhatsApp Baileys connected successfully!');
           this.isReady = true;
           this.qr = null;
+          this.retryCount = 0; // Reset retry counter on successful connection
         }
       });
 
