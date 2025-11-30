@@ -2,15 +2,29 @@
 
 ## 🚀 Quick Start (No Git Required!)
 
-One-liner untuk setup development environment dengan **Baileys + Ollama**:
+Setup development environment dengan **Baileys + Ollama** in 2 steps:
+
+### Step 1: Download Setup Script
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/iwewe/chatbot-disaster-response/refs/heads/claude/emergency-chatbot-database-015rFTqBPiJaT7MnsyVpSXpf/scripts/dev-setup.sh | bash
+# Download script
+curl -fsSL https://raw.githubusercontent.com/iwewe/chatbot-disaster-response/refs/heads/claude/emergency-chatbot-database-015rFTqBPiJaT7MnsyVpSXpf/scripts/dev-setup.sh -o emergency-dev-setup.sh
+
+# Make executable
+chmod +x emergency-dev-setup.sh
+```
+
+### Step 2: Run Interactive Setup
+
+```bash
+# Run script (will ask for Telegram credentials)
+bash emergency-dev-setup.sh
 ```
 
 **What it does:**
 - ✅ Downloads project (no git needed)
 - ✅ Configures for development (Baileys + Ollama)
+- ✅ Interactive configuration (Telegram bot)
 - ✅ Sets up environment variables
 - ✅ Deploys with Docker Compose
 - ✅ Auto-configures debug mode
@@ -24,6 +38,34 @@ curl -fsSL https://raw.githubusercontent.com/iwewe/chatbot-disaster-response/ref
 - Scan QR code untuk WhatsApp (Baileys)
 - Wait ~10 minutes untuk Ollama download model
 - Start testing!
+
+---
+
+### Alternative 1: One-Liner with Process Substitution
+
+If your terminal supports it:
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/iwewe/chatbot-disaster-response/refs/heads/claude/emergency-chatbot-database-015rFTqBPiJaT7MnsyVpSXpf/scripts/dev-setup.sh)
+```
+
+### Alternative 2: Non-Interactive with Environment Variables
+
+For automation or CI/CD:
+
+```bash
+# Set configuration via environment variables
+export DEV_TELEGRAM_BOT_TOKEN="your_telegram_bot_token"
+export DEV_TELEGRAM_ADMIN_CHAT_ID="your_chat_id"
+export DEV_API_BASE_URL="http://localhost:3000"  # optional
+
+# Download and run
+curl -fsSL https://raw.githubusercontent.com/iwewe/chatbot-disaster-response/refs/heads/claude/emergency-chatbot-database-015rFTqBPiJaT7MnsyVpSXpf/scripts/dev-setup.sh -o emergency-dev-setup.sh
+chmod +x emergency-dev-setup.sh
+bash emergency-dev-setup.sh
+```
+
+This skips all interactive prompts!
 
 ---
 

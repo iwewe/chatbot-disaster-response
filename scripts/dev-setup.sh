@@ -145,53 +145,76 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 echo "ℹ️  For development, you need minimal configuration"
 echo ""
+echo "💡 TIP: You can set environment variables to skip prompts:"
+echo "   export DEV_TELEGRAM_BOT_TOKEN=your_token"
+echo "   export DEV_TELEGRAM_ADMIN_CHAT_ID=your_chat_id"
+echo "   export DEV_API_BASE_URL=http://localhost:3000"
+echo ""
 
-# Telegram credentials (required)
-while true; do
+# Telegram credentials (check env var first)
+if [ -z "$DEV_TELEGRAM_BOT_TOKEN" ]; then
     echo "📬 Telegram Bot Configuration (for admin notifications):"
     echo ""
-    read -p "Telegram Bot Token (from @BotFather): " TELEGRAM_BOT_TOKEN
-    if [ -n "$TELEGRAM_BOT_TOKEN" ]; then
-        break
-    else
-        echo "❌ This field is required!"
-    fi
-done
 
-while true; do
-    read -p "Telegram Admin Chat ID: " TELEGRAM_ADMIN_CHAT_ID
-    if [ -n "$TELEGRAM_ADMIN_CHAT_ID" ]; then
-        break
-    else
+    while true; do
+        read -p "Telegram Bot Token (from @BotFather): " TELEGRAM_BOT_TOKEN
+        if [ -n "$TELEGRAM_BOT_TOKEN" ]; then
+            break
+        fi
         echo "❌ This field is required!"
+    done
+else
+    TELEGRAM_BOT_TOKEN="$DEV_TELEGRAM_BOT_TOKEN"
+    echo "✅ Using Telegram Bot Token from environment"
+fi
+
+if [ -z "$DEV_TELEGRAM_ADMIN_CHAT_ID" ]; then
+    if [ -z "$DEV_TELEGRAM_BOT_TOKEN" ]; then
+        echo ""
     fi
-done
+
+    while true; do
+        read -p "Telegram Admin Chat ID: " TELEGRAM_ADMIN_CHAT_ID
+        if [ -n "$TELEGRAM_ADMIN_CHAT_ID" ]; then
+            break
+        fi
+        echo "❌ This field is required!"
+    done
+else
+    TELEGRAM_ADMIN_CHAT_ID="$DEV_TELEGRAM_ADMIN_CHAT_ID"
+    echo "✅ Using Telegram Admin Chat ID from environment"
+fi
 
 echo ""
 echo "✅ Telegram configured"
 echo ""
 
-# API Base URL (localhost for development)
-echo "🌐 API Configuration:"
-echo ""
-echo "Select API Base URL:"
-echo "  1) Localhost (http://localhost:3000) - Default for development"
-echo "  2) Custom URL"
-echo ""
+# API Base URL (check env var or use default)
+if [ -n "$DEV_API_BASE_URL" ]; then
+    API_BASE_URL="$DEV_API_BASE_URL"
+    echo "✅ API Base URL: $API_BASE_URL (from environment)"
+else
+    echo "🌐 API Configuration:"
+    echo ""
+    echo "Select API Base URL:"
+    echo "  1) Localhost (http://localhost:3000) - Default for development"
+    echo "  2) Custom URL"
+    echo ""
 
-read -p "Select option (1-2) [1]: " API_OPTION
-API_OPTION=${API_OPTION:-1}
+    read -p "Select option (1-2) [1]: " API_OPTION
+    API_OPTION=${API_OPTION:-1}
 
-case $API_OPTION in
-    2)
-        read -p "Enter custom URL: " API_BASE_URL
-        ;;
-    *)
-        API_BASE_URL="http://localhost:3000"
-        ;;
-esac
+    case $API_OPTION in
+        2)
+            read -p "Enter custom URL: " API_BASE_URL
+            ;;
+        *)
+            API_BASE_URL="http://localhost:3000"
+            ;;
+    esac
 
-echo "✅ API Base URL: $API_BASE_URL"
+    echo "✅ API Base URL: $API_BASE_URL"
+fi
 echo ""
 
 # Update .env file
