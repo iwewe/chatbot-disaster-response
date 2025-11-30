@@ -2,6 +2,7 @@ import prisma from '../config/database.js';
 import logger from '../utils/logger.js';
 import whatsappService from '../services/whatsapp.service.js';
 import telegramService from '../services/telegram.service.js';
+import ollamaService from '../services/ollama.service.js';
 
 /**
  * Get all reports with filters
