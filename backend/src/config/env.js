@@ -23,10 +23,11 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default('7d'),
 
   // WhatsApp
-  WHATSAPP_PHONE_NUMBER_ID: z.string(),
-  WHATSAPP_ACCESS_TOKEN: z.string(),
-  WHATSAPP_VERIFY_TOKEN: z.string(),
-  WHATSAPP_BUSINESS_ACCOUNT_ID: z.string(),
+  WHATSAPP_MODE: z.enum(['meta', 'baileys', 'hybrid']).default('meta'),
+  WHATSAPP_PHONE_NUMBER_ID: z.string().optional(),
+  WHATSAPP_ACCESS_TOKEN: z.string().optional(),
+  WHATSAPP_VERIFY_TOKEN: z.string().optional(),
+  WHATSAPP_BUSINESS_ACCOUNT_ID: z.string().optional(),
 
   // Telegram
   TELEGRAM_BOT_TOKEN: z.string(),
@@ -83,10 +84,11 @@ export const config = {
   },
 
   whatsapp: {
-    phoneNumberId: env.WHATSAPP_PHONE_NUMBER_ID,
-    accessToken: env.WHATSAPP_ACCESS_TOKEN,
-    verifyToken: env.WHATSAPP_VERIFY_TOKEN,
-    businessAccountId: env.WHATSAPP_BUSINESS_ACCOUNT_ID,
+    mode: env.WHATSAPP_MODE,
+    phoneNumberId: env.WHATSAPP_PHONE_NUMBER_ID || '',
+    accessToken: env.WHATSAPP_ACCESS_TOKEN || '',
+    verifyToken: env.WHATSAPP_VERIFY_TOKEN || '',
+    businessAccountId: env.WHATSAPP_BUSINESS_ACCOUNT_ID || '',
   },
 
   telegram: {

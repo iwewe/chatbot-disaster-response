@@ -7,6 +7,8 @@ import config from './config/env.js';
 import logger from './utils/logger.js';
 import routes from './routes/index.js';
 import prisma from './config/database.js';
+import WhatsAppFactory from './services/whatsapp-factory.service.js';
+import messageProcessorService from './services/message-processor.service.js';
 
 // Create Express app
 const app = express();
@@ -102,6 +104,39 @@ async function startServer() {
     // Test database connection
     await prisma.$connect();
     logger.info('✅ Database connected');
+
+    // Initialize WhatsApp service
+    const whatsappService = WhatsAppFactory.createService();
+    logger.info(`📱 WhatsApp mode: ${config.whatsapp.mode}`);
+
+    // If Baileys or Hybrid mode, register message handler
+    if (config.whatsapp.mode === 'baileys' || config.whatsapp.mode === 'hybrid') {
+      if (whatsappService.onBaileysMessage) {
+        whatsappService.onBaileysMessage(async (message) => {
+          try {
+            await messageProcessorService.processMessage(message);
+          } catch (error) {
+            logger.error('Baileys message processing failed', { error: error.message });
+          }
+        });
+        logger.info('✅ Baileys message handler registered');
+
+        if (config.whatsapp.mode === 'baileys') {
+          logger.info('⚠️  Baileys mode: Scan QR code in console to authenticate');
+        }
+      } else if (config.whatsapp.mode === 'baileys') {
+        // Direct Baileys service
+        whatsappService.onMessage(async (message) => {
+          try {
+            await messageProcessorService.processMessage(message);
+          } catch (error) {
+            logger.error('Baileys message processing failed', { error: error.message });
+          }
+        });
+        logger.info('✅ Baileys message handler registered');
+        logger.info('⚠️  Baileys mode: Scan QR code in console to authenticate');
+      }
+    }
 
     // Start server
     const PORT = config.server.port;

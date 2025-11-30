@@ -42,46 +42,90 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "📱 WhatsApp Configuration"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
+echo "Select WhatsApp mode:"
+echo "  1) Meta Cloud API - Official (requires business account)"
+echo "  2) Baileys (WhatsApp Web) - No Meta account needed (scan QR)"
+echo "  3) Hybrid - Meta primary, Baileys fallback"
+echo ""
 
-# WhatsApp Phone Number ID
 while true; do
-    read -p "WhatsApp Phone Number ID: " WHATSAPP_PHONE_NUMBER_ID
-    if [ -n "$WHATSAPP_PHONE_NUMBER_ID" ]; then
+    read -p "Select mode (1-3): " WHATSAPP_MODE_CHOICE
+    case $WHATSAPP_MODE_CHOICE in
+        1)
+            WHATSAPP_MODE="meta"
+            echo "✅ Meta Cloud API selected"
+            break
+            ;;
+        2)
+            WHATSAPP_MODE="baileys"
+            echo "✅ Baileys (WhatsApp Web) selected"
+            echo "ℹ️  You will scan QR code after deployment"
+            break
+            ;;
+        3)
+            WHATSAPP_MODE="hybrid"
+            echo "✅ Hybrid mode selected (Meta + Baileys)"
+            break
+            ;;
+        *)
+            echo "❌ Invalid option. Please choose 1-3."
+            ;;
+    esac
+done
+
+# Only ask for Meta credentials if not using Baileys-only mode
+if [ "$WHATSAPP_MODE" != "baileys" ]; then
+    echo ""
+    echo "📝 Meta WhatsApp Cloud API Credentials:"
+    echo ""
+
+    # WhatsApp Phone Number ID
+    while true; do
+        read -p "WhatsApp Phone Number ID: " WHATSAPP_PHONE_NUMBER_ID
+        if [ -n "$WHATSAPP_PHONE_NUMBER_ID" ]; then
+            break
+        else
+            echo "❌ This field is required!"
+        fi
+    done
+
+    # WhatsApp Access Token
+    while true; do
+        read -p "WhatsApp Access Token: " WHATSAPP_ACCESS_TOKEN
+        if [ -n "$WHATSAPP_ACCESS_TOKEN" ]; then
+            break
+        else
+            echo "❌ This field is required!"
+        fi
+    done
+
+    # WhatsApp Verify Token
+    while true; do
+        read -p "WhatsApp Verify Token (create a random string): " WHATSAPP_VERIFY_TOKEN
+        if [ -z "$WHATSAPP_VERIFY_TOKEN" ]; then
+            WHATSAPP_VERIFY_TOKEN=$(openssl rand -hex 16)
+            echo "✅ Auto-generated: $WHATSAPP_VERIFY_TOKEN"
+        fi
         break
-    else
-        echo "❌ This field is required!"
-    fi
-done
+    done
 
-# WhatsApp Access Token
-while true; do
-    read -p "WhatsApp Access Token: " WHATSAPP_ACCESS_TOKEN
-    if [ -n "$WHATSAPP_ACCESS_TOKEN" ]; then
-        break
-    else
-        echo "❌ This field is required!"
-    fi
-done
-
-# WhatsApp Verify Token
-while true; do
-    read -p "WhatsApp Verify Token (create a random string): " WHATSAPP_VERIFY_TOKEN
-    if [ -z "$WHATSAPP_VERIFY_TOKEN" ]; then
-        WHATSAPP_VERIFY_TOKEN=$(openssl rand -hex 16)
-        echo "✅ Auto-generated: $WHATSAPP_VERIFY_TOKEN"
-    fi
-    break
-done
-
-# WhatsApp Business Account ID
-while true; do
-    read -p "WhatsApp Business Account ID: " WHATSAPP_BUSINESS_ACCOUNT_ID
-    if [ -n "$WHATSAPP_BUSINESS_ACCOUNT_ID" ]; then
-        break
-    else
-        echo "❌ This field is required!"
-    fi
-done
+    # WhatsApp Business Account ID
+    while true; do
+        read -p "WhatsApp Business Account ID: " WHATSAPP_BUSINESS_ACCOUNT_ID
+        if [ -n "$WHATSAPP_BUSINESS_ACCOUNT_ID" ]; then
+            break
+        else
+            echo "❌ This field is required!"
+        fi
+    done
+else
+    # Baileys mode - set placeholder values for Meta credentials
+    WHATSAPP_PHONE_NUMBER_ID="baileys_mode"
+    WHATSAPP_ACCESS_TOKEN="baileys_mode"
+    WHATSAPP_VERIFY_TOKEN="baileys_mode"
+    WHATSAPP_BUSINESS_ACCOUNT_ID="baileys_mode"
+    echo "ℹ️  Meta credentials skipped (Baileys mode)"
+fi
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -224,6 +268,7 @@ echo "💾 Writing configuration to .env..."
 echo ""
 
 # Update .env file
+sed -i "s|WHATSAPP_MODE=.*|WHATSAPP_MODE=$WHATSAPP_MODE|" .env
 sed -i "s|WHATSAPP_PHONE_NUMBER_ID=.*|WHATSAPP_PHONE_NUMBER_ID=$WHATSAPP_PHONE_NUMBER_ID|" .env
 sed -i "s|WHATSAPP_ACCESS_TOKEN=.*|WHATSAPP_ACCESS_TOKEN=$WHATSAPP_ACCESS_TOKEN|" .env
 sed -i "s|WHATSAPP_VERIFY_TOKEN=.*|WHATSAPP_VERIFY_TOKEN=$WHATSAPP_VERIFY_TOKEN|" .env

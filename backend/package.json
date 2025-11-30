@@ -16,7 +16,9 @@
   "author": "Combine Resources Institution",
   "license": "MIT",
   "dependencies": {
+    "@hapi/boom": "^10.0.1",
     "@prisma/client": "^5.22.0",
+    "@whiskeysockets/baileys": "^6.7.9",
     "axios": "^1.7.9",
     "bcrypt": "^5.1.1",
     "bullmq": "^5.28.2",
@@ -29,6 +31,9 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "node-telegram-bot-api": "^0.66.0",
+    "pino": "^9.5.0",
+    "qrcode": "^1.5.4",
+    "qrcode-terminal": "^0.12.0",
     "winston": "^3.17.0",
     "zod": "^3.23.8"
   },

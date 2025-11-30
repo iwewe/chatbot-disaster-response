@@ -1,10 +1,13 @@
 import prisma from '../config/database.js';
 import ollamaService from './ollama.service.js';
-import whatsappService from './whatsapp.service.js';
+import WhatsAppFactory from './whatsapp-factory.service.js';
 import telegramService from './telegram.service.js';
 import mediaService from './media.service.js';
 import logger from '../utils/logger.js';
 import config from '../config/env.js';
+
+// Create WhatsApp service based on configuration
+const whatsappService = WhatsAppFactory.createService();
 
 class MessageProcessorService {
   /**

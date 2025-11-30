@@ -78,6 +78,7 @@ services:
     volumes:
       - ./backend/logs:/app/logs
       - media_data:/app/media
+      - baileys_session:/app/baileys-session
     networks:
       - emergency_network
     healthcheck:
@@ -130,4 +131,6 @@ volumes:
   redis_data:
     driver: local
   media_data:
+    driver: local
+  baileys_session:
     driver: local

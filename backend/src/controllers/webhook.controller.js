@@ -1,6 +1,9 @@
-import whatsappService from '../services/whatsapp.service.js';
+import WhatsAppFactory from '../services/whatsapp-factory.service.js';
 import messageProcessorService from '../services/message-processor.service.js';
 import logger from '../utils/logger.js';
+
+// Create WhatsApp service based on configuration
+const whatsappService = WhatsAppFactory.createService();
 
 /**
  * Verify WhatsApp webhook (GET request from Meta)
