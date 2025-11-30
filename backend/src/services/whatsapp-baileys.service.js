@@ -28,8 +28,8 @@ class WhatsAppBaileysService {
       fs.mkdirSync(this.sessionPath, { recursive: true });
     }
 
-    // Pino logger for Baileys (quiet mode)
-    this.pinoLogger = pino({ level: 'silent' });
+    // Pino logger for Baileys (debug mode for troubleshooting)
+    this.pinoLogger = pino({ level: 'debug' });
 
     this.initialize();
   }
@@ -44,11 +44,27 @@ class WhatsAppBaileysService {
         logger: this.pinoLogger,
         browser: ['Emergency Chatbot', 'Chrome', '120.0.0'],
         markOnlineOnConnect: true,
+        // Connection options for better reliability
+        connectTimeoutMs: 60000, // 60 seconds timeout
+        defaultQueryTimeoutMs: 60000,
+        keepAliveIntervalMs: 30000,
+        // Retry config
+        retryRequestDelayMs: 500,
+        maxMsgRetryCount: 5,
       });
 
       // Connection updates (QR code, connected, etc)
       this.sock.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect, qr } = update;
+
+        // Log all connection updates for debugging
+        logger.debug('Baileys connection update', {
+          connection,
+          hasQR: !!qr,
+          errorType: lastDisconnect?.error?.constructor?.name,
+          errorMessage: lastDisconnect?.error?.message,
+          fullUpdate: update
+        });
 
         if (qr) {
           this.qr = qr;
@@ -77,9 +93,19 @@ class WhatsAppBaileysService {
               ? lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut
               : true;
 
+          // Enhanced error logging
+          const errorDetails = lastDisconnect?.error instanceof Boom
+            ? {
+                statusCode: lastDisconnect.error.output.statusCode,
+                payload: lastDisconnect.error.output.payload,
+                data: lastDisconnect.error.data
+              }
+            : { raw: lastDisconnect?.error };
+
           logger.warn('WhatsApp Baileys connection closed', {
             shouldReconnect,
             error: lastDisconnect?.error?.message,
+            errorDetails
           });
 
           if (shouldReconnect) {
