@@ -325,4 +325,8 @@ class WhatsAppService {
   }
 }
 
-export default WhatsAppService;
+// Export class for Factory pattern
+export { WhatsAppService };
+
+// Export singleton instance for backward compatibility
+export default new WhatsAppService();

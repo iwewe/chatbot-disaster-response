@@ -1,6 +1,6 @@
 import config from '../config/env.js';
 import logger from '../utils/logger.js';
-import WhatsAppService from './whatsapp.service.js';
+import { WhatsAppService } from './whatsapp.service.js';
 import WhatsAppBaileysService from './whatsapp-baileys.service.js';
 
 /**
