@@ -407,10 +407,10 @@ MIT License - see [LICENSE](LICENSE) file
 
 **For technical issues:**
 - GitHub Issues: [repository]/issues
-- Email: maksum@combine.id
+- Email: wahyu@combine.id
 
 **For emergency deployment assistance:**
-- Contact: maksum@combine.id
+- Contact: wahyu@combine.id
 - Available: 24/7 during disaster response
 
 ---
@@ -426,4 +426,4 @@ MIT License - see [LICENSE](LICENSE) file
 
 **Built with ❤️ for humanity**
 
-_Last Updated: 2024-11-26_
+_Last Updated: 2024-12-08_
