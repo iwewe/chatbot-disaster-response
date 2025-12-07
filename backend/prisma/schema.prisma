@@ -1,0 +1,385 @@
+// Disaster Response Database Schema
+// Optimized for emergency operations with data retention & audit trail
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USER MANAGEMENT
+// ============================================
+
+enum UserRole {
+  ADMIN           // Full access - CRI internal
+  PMI_BNPB        // Read-only raw data access
+  COORDINATOR     // Pemda, NGO, UN - aggregated data only
+  VOLUNTEER       // Verified volunteers - can submit & update
+}
+
+model User {
+  id            String   @id @default(cuid())
+  phoneNumber   String   @unique // WhatsApp number
+  name          String
+  role          UserRole @default(VOLUNTEER)
+  organization  String?  // Organization name
+  isActive      Boolean  @default(true)
+  trustLevel    Int      @default(0) // 0=new, 1-5=verified levels
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  reports       Report[] @relation("ReporterReports")
+  assignedCases Report[] @relation("AssignedReports")
+  auditLogs     AuditLog[]
+
+  @@index([phoneNumber])
+  @@index([role])
+}
+
+// ============================================
+// REPORTS - Core data collection
+// ============================================
+
+enum ReportType {
+  KORBAN          // Meninggal, hilang, luka
+  KEBUTUHAN       // Pangan, air, medis, shelter, evakuasi
+  PENYALURAN      // Bantuan yang sudah disalurkan (Phase 1+)
+  PENGUNGSIAN     // Info titik pengungsian (Phase 1+)
+  INFRASTRUKTUR   // Kerusakan infrastruktur (Phase 1+)
+}
+
+enum ReportStatus {
+  PENDING_VERIFICATION  // Belum diverifikasi
+  VERIFIED              // Sudah diverifikasi, belum ditindaklanjuti
+  ASSIGNED              // Sudah diassign ke tim/volunteer
+  IN_PROGRESS           // Sedang ditangani
+  RESOLVED              // Selesai
+  CLOSED                // Closed (duplicate/invalid)
+  STALE                 // Lebih dari 6 bulan, belum resolved
+}
+
+enum UrgencyLevel {
+  CRITICAL    // Life-threatening, immediate action needed
+  HIGH        // Urgent, action within hours
+  MEDIUM      // Important, action within 1-2 days
+  LOW         // Can wait, action within week
+}
+
+model Report {
+  id              String        @id @default(cuid())
+  reportNumber    String        @unique // Auto-generated: VR-001, PB-001, etc.
+
+  type            ReportType
+  status          ReportStatus  @default(PENDING_VERIFICATION)
+  urgency         UrgencyLevel  @default(MEDIUM)
+
+  // Reporter info
+  reporterId      String
+  reporter        User          @relation("ReporterReports", fields: [reporterId], references: [id])
+  reporterPhone   String        // Duplicate for quick access
+  reportSource    String        @default("whatsapp") // whatsapp, web, api
+
+  // Location (flexible - bisa alamat text atau GPS)
+  location        String        // Desa/dusun/kelurahan
+  locationDetail  String?       // RT/RW, landmarks
+  latitude        Float?
+  longitude       Float?
+
+  // AI-extracted data
+  summary         String        // AI-generated summary
+  rawMessage      String        // Original message from user
+  extractedData   Json?         // Structured data dari AI
+
+  // Assignment & follow-up
+  assignedToId    String?
+  assignedTo      User?         @relation("AssignedReports", fields: [assignedToId], references: [id])
+  assignedAt      DateTime?
+
+  // Verification
+  verifiedBy      String?       // User ID who verified
+  verifiedAt      DateTime?
+  verificationNote String?
+
+  // Timestamps
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  resolvedAt      DateTime?
+
+  // Relations
+  persons         ReportPerson[]
+  needs           ReportNeed[]
+  actions         ReportAction[]
+  media           ReportMedia[]
+  auditLogs       AuditLog[]
+
+  @@index([reportNumber])
+  @@index([type, status])
+  @@index([createdAt])
+  @@index([reporterId])
+  @@index([status])
+}
+
+// ============================================
+// KORBAN DETAILS
+// ============================================
+
+enum PersonStatus {
+  MENINGGAL       // Confirmed dead
+  HILANG          // Missing
+  LUKA_BERAT      // Seriously injured
+  LUKA_SEDANG     // Moderately injured
+  LUKA_RINGAN     // Minor injury
+  SAKIT           // Sick (not injury-related)
+  SELAMAT         // Safe/rescued
+}
+
+model ReportPerson {
+  id              String        @id @default(cuid())
+  reportId        String
+  report          Report        @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  // Identity
+  name            String
+  nik             String?       // NIK (optional, untuk tracing)
+  gender          String?       // L/P
+  age             Int?          // Umur (bisa estimasi)
+  ageGroup        String?       // anak/dewasa/lansia (jika umur tidak pasti)
+
+  // Status
+  status          PersonStatus
+  condition       String?       // Deskripsi kondisi lebih detail
+
+  // Location & treatment
+  lastSeenLocation String?      // Lokasi terakhir terlihat (untuk hilang)
+  lastSeenDate     DateTime?    // Tanggal terakhir terlihat
+  currentLocation  String?      // RS/Puskesmas/Posko (untuk luka/sakit)
+
+  // Contact tracing
+  familyContact    String?      // Nama keluarga/penanggung jawab
+  familyPhone      String?      // Nomor yang bisa dihubungi
+
+  // Additional data
+  notes            String?
+  photoUrl         String?      // Foto (untuk identifikasi)
+
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([reportId])
+  @@index([status])
+  @@index([name])
+}
+
+// ============================================
+// KEBUTUHAN DETAILS
+// ============================================
+
+enum NeedCategory {
+  PANGAN          // Makanan siap saji, beras, dll
+  AIR             // Air bersih, air minum
+  MEDIS           // Obat, alat kesehatan
+  SHELTER         // Tenda, terpal, matras
+  EVAKUASI        // Evakuasi darurat
+  SANITASI        // MCK, hygiene kit
+  LOGISTIK_LAIN   // Selimut, pakaian, dll
+  PERLINDUNGAN    // Kebutuhan khusus (bayi, lansia, disabilitas)
+}
+
+enum NeedStatus {
+  BELUM_TERPENUHI
+  SEBAGIAN_TERPENUHI
+  TERPENUHI
+}
+
+model ReportNeed {
+  id              String        @id @default(cuid())
+  reportId        String
+  report          Report        @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  category        NeedCategory
+  description     String        // Deskripsi kebutuhan spesifik
+  quantity        String?       // Jumlah/volume (text, karena bisa "10 keluarga", "50 orang", dll)
+
+  peopleAffected  Int?          // Jumlah orang terdampak
+
+  status          NeedStatus    @default(BELUM_TERPENUHI)
+  fulfillmentNote String?       // Catatan pemenuhan
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([reportId])
+  @@index([category, status])
+}
+
+// ============================================
+// ACTION TRACKING (Follow-up)
+// ============================================
+
+enum ActionType {
+  VERIFICATION_CALL    // Admin call untuk verifikasi
+  FIELD_VISIT          // Kunjungan lapangan
+  RESOURCE_DISPATCHED  // Bantuan/tim dikirim
+  STATUS_UPDATE        // Update status dari lapangan
+  CLOSED               // Penutupan kasus
+  NOTE                 // Catatan umum
+}
+
+model ReportAction {
+  id              String      @id @default(cuid())
+  reportId        String
+  report          Report      @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  type            ActionType
+  description     String
+  takenBy         String      // User ID
+
+  createdAt       DateTime    @default(now())
+
+  @@index([reportId])
+}
+
+// ============================================
+// MEDIA ATTACHMENTS (Foto/Video untuk Verifikasi)
+// ============================================
+
+enum MediaType {
+  IMAGE       // Foto (JPEG, PNG)
+  VIDEO       // Video (MP4, 3GP)
+  AUDIO       // Voice note
+  DOCUMENT    // PDF, DOC, dll
+}
+
+model ReportMedia {
+  id              String      @id @default(cuid())
+  reportId        String
+  report          Report      @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  // Media metadata
+  mediaType       MediaType
+  fileName        String      // Original filename
+  filePath        String      // Path di storage (local or cloud)
+  fileSize        Int?        // Size in bytes
+  mimeType        String?     // e.g., image/jpeg, video/mp4
+
+  // WhatsApp specific
+  whatsappMediaId String?     // Media ID dari WhatsApp
+  caption         String?     // Caption yang dikirim user
+
+  // Upload info
+  uploadedBy      String      // User ID yang upload
+  uploadedAt      DateTime    @default(now())
+
+  // Optional: AI-generated description (untuk foto)
+  aiDescription   String?     // Deskripsi otomatis dari AI vision (future)
+
+  @@index([reportId])
+  @@index([mediaType])
+  @@index([uploadedAt])
+}
+
+// ============================================
+// CHAT STATE MANAGEMENT (untuk conversational AI)
+// ============================================
+
+model ChatState {
+  id              String      @id @default(cuid())
+  phoneNumber     String      @unique
+
+  currentIntent   String?     // "report_korban", "report_kebutuhan", "update_report", dll
+  currentReportId String?     // Jika sedang melengkapi laporan tertentu
+
+  state           Json        // Conversation state (slot-filling progress)
+  lastMessageAt   DateTime    @default(now())
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([phoneNumber])
+}
+
+// ============================================
+// AUDIT LOG (untuk transparansi & tracking)
+// ============================================
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  VERIFY
+  ASSIGN
+  RESOLVE
+  EXPORT
+  ACCESS
+}
+
+model AuditLog {
+  id              String      @id @default(cuid())
+
+  userId          String
+  user            User        @relation(fields: [userId], references: [id])
+
+  action          AuditAction
+  entityType      String      // "Report", "User", dll
+  entityId        String      // ID of the entity
+
+  changes         Json?       // Before/after data
+  metadata        Json?       // IP address, user agent, dll
+
+  createdAt       DateTime    @default(now())
+
+  reportId        String?
+  report          Report?     @relation(fields: [reportId], references: [id])
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+// ============================================
+// EXTERNAL ORGANIZATION ACCESS (untuk data sharing)
+// ============================================
+
+model OrganizationAccess {
+  id              String      @id @default(cuid())
+
+  organizationName String
+  contactPerson    String
+  contactEmail     String?
+  contactPhone     String?
+
+  accessLevel      String      // "raw_data" atau "aggregated"
+  approvedBy       String      // Admin user ID
+
+  isActive         Boolean     @default(true)
+  expiresAt        DateTime?   // Optional expiry
+
+  apiKey           String      @unique // For API access
+
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  @@index([apiKey])
+}
+
+// ============================================
+// SYSTEM HEALTH (untuk monitoring)
+// ============================================
+
+model SystemHealth {
+  id              String      @id @default(cuid())
+
+  serviceName     String      // "ollama", "whatsapp", "telegram", dll
+  status          String      // "healthy", "degraded", "down"
+  responseTime    Int?        // in milliseconds
+  errorMessage    String?
+
+  checkedAt       DateTime    @default(now())
+
+  @@index([serviceName, checkedAt])
+}
