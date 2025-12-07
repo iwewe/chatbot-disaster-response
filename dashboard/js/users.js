@@ -184,8 +184,6 @@ function showAddUserModal() {
   document.getElementById('userModalTitle').textContent = 'Tambah Pengguna';
   document.getElementById('userForm').reset();
   document.getElementById('userId').value = '';
-  document.getElementById('passwordField').style.display = 'block';
-  document.getElementById('password').required = true;
   document.getElementById('userModal').classList.remove('hidden');
 }
 
@@ -195,21 +193,15 @@ async function editUser(userId) {
     const data = await authFetch(`/api/users/${userId}`);
 
     if (data.success) {
-      const user = data.user;
+      const user = data.data || data.user;
 
       document.getElementById('userModalTitle').textContent = 'Edit Pengguna';
       document.getElementById('userId').value = user.id;
-      document.getElementById('username').value = user.username;
+      document.getElementById('phoneNumber').value = user.phoneNumber;
       document.getElementById('name').value = user.name;
-      document.getElementById('email').value = user.email || '';
-      document.getElementById('phone').value = user.phone || '';
+      document.getElementById('organization').value = user.organization || '';
       document.getElementById('role').value = user.role;
       document.getElementById('isActive').checked = user.isActive;
-
-      // Password optional for editing
-      document.getElementById('passwordField').style.display = 'block';
-      document.getElementById('password').required = false;
-      document.getElementById('password').value = '';
 
       document.getElementById('userModal').classList.remove('hidden');
     }
@@ -230,19 +222,12 @@ document.getElementById('userForm').addEventListener('submit', async (e) => {
 
   const userId = document.getElementById('userId').value;
   const formData = {
-    username: document.getElementById('username').value,
+    phoneNumber: document.getElementById('phoneNumber').value,
     name: document.getElementById('name').value,
-    email: document.getElementById('email').value || null,
-    phone: document.getElementById('phone').value || null,
+    organization: document.getElementById('organization').value || null,
     role: document.getElementById('role').value,
     isActive: document.getElementById('isActive').checked,
   };
-
-  // Only include password if provided
-  const password = document.getElementById('password').value;
-  if (password) {
-    formData.password = password;
-  }
 
   try {
     let data;
@@ -250,15 +235,11 @@ document.getElementById('userForm').addEventListener('submit', async (e) => {
     if (userId) {
       // Update existing user
       data = await authFetch(`/api/users/${userId}`, {
-        method: 'PUT',
+        method: 'PATCH',
         body: JSON.stringify(formData),
       });
     } else {
       // Create new user
-      if (!password) {
-        alert('Password wajib diisi untuk pengguna baru');
-        return;
-      }
       data = await authFetch('/api/users', {
         method: 'POST',
         body: JSON.stringify(formData),
@@ -284,7 +265,7 @@ async function toggleUserStatus(userId, newStatus) {
 
   try {
     const data = await authFetch(`/api/users/${userId}`, {
-      method: 'PUT',
+      method: 'PATCH',
       body: JSON.stringify({ isActive: newStatus }),
     });
 

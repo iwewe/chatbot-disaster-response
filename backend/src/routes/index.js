@@ -44,7 +44,10 @@ router.get('/api/dashboard/stats', authenticate, apiController.getDashboardStats
 
 // Users management
 router.get('/api/users', authenticate, authorize('ADMIN'), apiController.getUsers);
+router.get('/api/users/:id', authenticate, authorize('ADMIN'), apiController.getUserById);
+router.post('/api/users', authenticate, authorize('ADMIN'), apiController.createUser);
 router.patch('/api/users/:id', authenticate, authorize('ADMIN'), apiController.updateUser);
+router.delete('/api/users/:id', authenticate, authorize('ADMIN'), apiController.deleteUser);
 
 // Export
 router.get(

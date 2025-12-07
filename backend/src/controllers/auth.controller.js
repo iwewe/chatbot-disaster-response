@@ -9,14 +9,16 @@ import logger from '../utils/logger.js';
  */
 export async function login(req, res) {
   try {
-    const { phoneNumber, password } = req.body;
+    // Accept either phoneNumber or username (username is treated as phoneNumber)
+    const { phoneNumber, username, password } = req.body;
+    const loginIdentifier = phoneNumber || username;
 
-    if (!phoneNumber) {
-      return res.status(400).json({ success: false, error: 'Phone number required' });
+    if (!loginIdentifier) {
+      return res.status(400).json({ success: false, error: 'Phone number or username required' });
     }
 
     const user = await prisma.user.findUnique({
-      where: { phoneNumber },
+      where: { phoneNumber: loginIdentifier },
     });
 
     if (!user) {

@@ -22,10 +22,13 @@ async function loadStats() {
     const data = await authFetch('/api/dashboard/stats');
 
     if (data.success) {
-      document.getElementById('totalReports').textContent = data.stats.total || 0;
-      document.getElementById('pendingReports').textContent = data.stats.pending || 0;
-      document.getElementById('verifiedReports').textContent = data.stats.verified || 0;
-      document.getElementById('criticalReports').textContent = data.stats.critical || 0;
+      const stats = data.data || data;
+      const summary = stats.summary || stats;
+
+      document.getElementById('totalReports').textContent = summary.totalReports || 0;
+      document.getElementById('pendingReports').textContent = summary.pendingVerification || 0;
+      document.getElementById('verifiedReports').textContent = (summary.totalReports - summary.pendingVerification) || 0;
+      document.getElementById('criticalReports').textContent = summary.criticalReports || 0;
     }
   } catch (error) {
     console.error('Failed to load stats:', error);
@@ -35,9 +38,13 @@ async function loadStats() {
 // Load charts
 async function loadCharts() {
   try {
-    const data = await authFetch('/api/dashboard/charts');
+    const data = await authFetch('/api/dashboard/stats');
 
     if (data.success) {
+      const stats = data.data || data;
+      const reportsByType = stats.reportsByType || {};
+      const reportsByUrgency = stats.reportsByUrgency || {};
+
       // Report Types Chart
       if (reportTypesChart) reportTypesChart.destroy();
       const reportTypesCtx = document.getElementById('reportTypesChart').getContext('2d');
@@ -47,8 +54,8 @@ async function loadCharts() {
           labels: ['Korban', 'Kebutuhan'],
           datasets: [{
             data: [
-              data.reportTypes.KORBAN || 0,
-              data.reportTypes.KEBUTUHAN || 0,
+              reportsByType.KORBAN || 0,
+              reportsByType.KEBUTUHAN || 0,
             ],
             backgroundColor: [
               'rgba(239, 68, 68, 0.8)',
@@ -82,10 +89,10 @@ async function loadCharts() {
           datasets: [{
             label: 'Jumlah Laporan',
             data: [
-              data.urgencyLevels.CRITICAL || 0,
-              data.urgencyLevels.HIGH || 0,
-              data.urgencyLevels.MEDIUM || 0,
-              data.urgencyLevels.LOW || 0,
+              reportsByUrgency.CRITICAL || 0,
+              reportsByUrgency.HIGH || 0,
+              reportsByUrgency.MEDIUM || 0,
+              reportsByUrgency.LOW || 0,
             ],
             backgroundColor: [
               'rgba(239, 68, 68, 0.8)',
@@ -129,12 +136,13 @@ async function loadCharts() {
 // Load recent reports
 async function loadRecentReports() {
   try {
-    const data = await authFetch('/api/reports?limit=5&sort=createdAt:desc');
+    const data = await authFetch('/api/reports?limit=5&sortBy=createdAt&sortOrder=desc');
 
     const container = document.getElementById('recentReports');
+    const reports = data.data || data.reports || [];
 
-    if (data.success && data.reports && data.reports.length > 0) {
-      container.innerHTML = data.reports.map(report => `
+    if (data.success && reports && reports.length > 0) {
+      container.innerHTML = reports.map(report => `
         <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
           <div class="flex items-start justify-between mb-2">
             <div class="flex-1">

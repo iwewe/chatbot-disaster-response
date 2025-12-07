@@ -278,14 +278,68 @@ export async function getDashboardStats(req, res) {
  */
 export async function getUsers(req, res) {
   try {
-    const { role, isActive } = req.query;
+    const { role, isActive, search, page = 1, limit = 20 } = req.query;
 
     const where = {};
     if (role) where.role = role;
     if (isActive !== undefined) where.isActive = isActive === 'true';
 
-    const users = await prisma.user.findMany({
-      where,
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { phoneNumber: { contains: search } },
+        { organization: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        select: {
+          id: true,
+          phoneNumber: true,
+          name: true,
+          role: true,
+          organization: true,
+          isActive: true,
+          trustLevel: true,
+          createdAt: true,
+          _count: {
+            select: { reports: true },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: parseInt(limit),
+      }),
+      prisma.user.count({ where }),
+    ]);
+
+    res.json({
+      success: true,
+      data: users,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
+  } catch (error) {
+    logger.error('Failed to get users', { error: error.message });
+    res.status(500).json({ success: false, error: error.message });
+  }
+}
+
+/**
+ * Get single user by ID
+ */
+export async function getUserById(req, res) {
+  try {
+    const { id } = req.params;
+
+    const user = await prisma.user.findUnique({
+      where: { id },
       select: {
         id: true,
         phoneNumber: true,
@@ -295,16 +349,81 @@ export async function getUsers(req, res) {
         isActive: true,
         trustLevel: true,
         createdAt: true,
+        updatedAt: true,
         _count: {
-          select: { reports: true },
+          select: {
+            reports: true,
+            assignedCases: true,
+          },
         },
       },
-      orderBy: { createdAt: 'desc' },
     });
 
-    res.json({ success: true, data: users });
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    res.json({ success: true, data: user });
   } catch (error) {
-    logger.error('Failed to get users', { error: error.message });
+    logger.error('Failed to get user', { error: error.message });
+    res.status(500).json({ success: false, error: error.message });
+  }
+}
+
+/**
+ * Create new user
+ */
+export async function createUser(req, res) {
+  try {
+    const { phoneNumber, name, role, organization, isActive = true, trustLevel = 0 } = req.body;
+    const adminId = req.user.id;
+
+    if (!phoneNumber || !name || !role) {
+      return res.status(400).json({
+        success: false,
+        error: 'Phone number, name, and role are required',
+      });
+    }
+
+    // Check if user already exists
+    const existing = await prisma.user.findUnique({
+      where: { phoneNumber },
+    });
+
+    if (existing) {
+      return res.status(409).json({
+        success: false,
+        error: 'User with this phone number already exists',
+      });
+    }
+
+    const user = await prisma.user.create({
+      data: {
+        phoneNumber,
+        name,
+        role,
+        organization,
+        isActive,
+        trustLevel,
+      },
+    });
+
+    // Audit log
+    await prisma.auditLog.create({
+      data: {
+        userId: adminId,
+        action: 'CREATE',
+        entityType: 'User',
+        entityId: user.id,
+        changes: { phoneNumber, name, role, organization },
+      },
+    });
+
+    logger.info('User created', { userId: user.id, adminId });
+
+    res.status(201).json({ success: true, data: user });
+  } catch (error) {
+    logger.error('Failed to create user', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
 }
@@ -344,6 +463,57 @@ export async function updateUser(req, res) {
     res.json({ success: true, data: user });
   } catch (error) {
     logger.error('Failed to update user', { error: error.message });
+    res.status(500).json({ success: false, error: error.message });
+  }
+}
+
+/**
+ * Delete user
+ */
+export async function deleteUser(req, res) {
+  try {
+    const { id } = req.params;
+    const adminId = req.user.id;
+
+    // Check if user exists
+    const user = await prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    // Prevent deleting yourself
+    if (id === adminId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Cannot delete your own account',
+      });
+    }
+
+    // Soft delete by deactivating
+    await prisma.user.update({
+      where: { id },
+      data: { isActive: false },
+    });
+
+    // Audit log
+    await prisma.auditLog.create({
+      data: {
+        userId: adminId,
+        action: 'DELETE',
+        entityType: 'User',
+        entityId: id,
+        changes: { deleted: true },
+      },
+    });
+
+    logger.info('User deleted (deactivated)', { userId: id, adminId });
+
+    res.json({ success: true, message: 'User deactivated successfully' });
+  } catch (error) {
+    logger.error('Failed to delete user', { error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
 }

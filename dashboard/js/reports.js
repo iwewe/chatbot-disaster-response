@@ -27,8 +27,11 @@ async function loadReports(page = 1) {
     const data = await authFetch(`/api/reports?${params.toString()}`);
 
     if (data.success) {
-      displayReports(data.reports);
-      displayPagination(data.pagination);
+      const reports = data.data || data.reports || [];
+      displayReports(reports);
+      if (data.pagination) {
+        displayPagination(data.pagination);
+      }
     }
   } catch (error) {
     console.error('Failed to load reports:', error);
@@ -169,7 +172,8 @@ async function viewReport(reportId) {
     const data = await authFetch(`/api/reports/${reportId}`);
 
     if (data.success) {
-      displayReportModal(data.report);
+      const report = data.data || data.report;
+      displayReportModal(report);
     }
   } catch (error) {
     console.error('Failed to load report detail:', error);
@@ -311,7 +315,7 @@ async function updateReportStatus(reportId, newStatus) {
 
   try {
     const data = await authFetch(`/api/reports/${reportId}/status`, {
-      method: 'PUT',
+      method: 'PATCH',
       body: JSON.stringify({ status: newStatus }),
     });
 
