@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Peta - Emergency Response</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    #map { height: calc(100vh - 80px); }
+    .leaflet-popup-content { min-width: 200px; }
+  </style>
+</head>
+<body class="bg-gray-50">
+  <div class="flex h-screen overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="bg-gray-900 text-white w-64 flex-shrink-0 z-20">
+      <div class="p-6">
+        <div class="flex items-center space-x-3 mb-8">
+          <div class="bg-red-600 w-10 h-10 rounded-lg flex items-center justify-center">
+            <i class="fas fa-heartbeat text-xl"></i>
+          </div>
+          <div>
+            <h2 class="font-bold text-lg">Emergency</h2>
+            <p class="text-xs text-gray-400">Response System</p>
+          </div>
+        </div>
+
+        <nav class="space-y-2">
+          <a href="./dashboard.html" class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-800">
+            <i class="fas fa-home"></i>
+            <span>Dashboard</span>
+          </a>
+          <a href="./reports.html" class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-800">
+            <i class="fas fa-file-alt"></i>
+            <span>Laporan</span>
+          </a>
+          <a href="./users.html" class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-800">
+            <i class="fas fa-users"></i>
+            <span>Pengguna</span>
+          </a>
+          <a href="./map.html" class="flex items-center space-x-3 bg-blue-600 px-4 py-3 rounded-lg">
+            <i class="fas fa-map-marked-alt"></i>
+            <span>Peta</span>
+          </a>
+        </nav>
+
+        <!-- Filters -->
+        <div class="mt-6 pt-6 border-t border-gray-800">
+          <h3 class="text-sm font-semibold mb-3">Filter Peta</h3>
+
+          <div class="space-y-3">
+            <div>
+              <label class="flex items-center space-x-2 text-sm cursor-pointer">
+                <input type="checkbox" id="filterKorban" checked onchange="updateMapFilters()" class="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500">
+                <span><i class="fas fa-ambulance text-red-500 mr-1"></i>Korban</span>
+              </label>
+            </div>
+
+            <div>
+              <label class="flex items-center space-x-2 text-sm cursor-pointer">
+                <input type="checkbox" id="filterKebutuhan" checked onchange="updateMapFilters()" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                <span><i class="fas fa-box text-blue-500 mr-1"></i>Kebutuhan</span>
+              </label>
+            </div>
+
+            <div class="pt-3 border-t border-gray-700">
+              <p class="text-xs text-gray-400 mb-2">Urgensi</p>
+
+              <label class="flex items-center space-x-2 text-sm cursor-pointer mb-2">
+                <input type="checkbox" id="filterCritical" checked onchange="updateMapFilters()" class="w-4 h-4 text-red-600 border-gray-300 rounded">
+                <span>🚨 Kritis</span>
+              </label>
+
+              <label class="flex items-center space-x-2 text-sm cursor-pointer mb-2">
+                <input type="checkbox" id="filterHigh" checked onchange="updateMapFilters()" class="w-4 h-4 text-orange-600 border-gray-300 rounded">
+                <span>🔴 Tinggi</span>
+              </label>
+
+              <label class="flex items-center space-x-2 text-sm cursor-pointer mb-2">
+                <input type="checkbox" id="filterMedium" checked onchange="updateMapFilters()" class="w-4 h-4 text-yellow-600 border-gray-300 rounded">
+                <span>🟡 Sedang</span>
+              </label>
+
+              <label class="flex items-center space-x-2 text-sm cursor-pointer">
+                <input type="checkbox" id="filterLow" checked onchange="updateMapFilters()" class="w-4 h-4 text-green-600 border-gray-300 rounded">
+                <span>🟢 Rendah</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- User Profile -->
+      <div class="absolute bottom-0 w-64 p-6 border-t border-gray-800">
+        <div class="flex items-center space-x-3">
+          <div class="bg-gray-700 w-10 h-10 rounded-full flex items-center justify-center">
+            <i class="fas fa-user"></i>
+          </div>
+          <div class="flex-1">
+            <p class="font-semibold text-sm" id="userName">Admin</p>
+            <p class="text-xs text-gray-400" id="userRole">Administrator</p>
+          </div>
+          <button onclick="logout()" class="text-gray-400 hover:text-white">
+            <i class="fas fa-sign-out-alt"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-hidden">
+      <!-- Header -->
+      <header class="bg-white shadow-sm p-6 z-10">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-2xl font-bold text-gray-800">Peta Laporan</h1>
+            <p class="text-gray-600">Visualisasi geografis laporan bencana</p>
+          </div>
+          <div class="flex items-center space-x-4">
+            <div id="mapStats" class="flex items-center space-x-4 text-sm">
+              <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full">
+                <i class="fas fa-map-marker-alt mr-1"></i>
+                <strong id="visibleMarkers">0</strong> marker
+              </span>
+            </div>
+            <button onclick="refreshMap()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+              <i class="fas fa-sync-alt mr-2"></i>Refresh
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Map Container -->
+      <div id="map"></div>
+    </main>
+  </div>
+
+  <script src="./js/auth.js"></script>
+  <script src="./js/map.js"></script>
+</body>
+</html>
