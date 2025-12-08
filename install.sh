@@ -465,11 +465,76 @@ success "Database initialized"
 ################################################################################
 header "PHASE 8: Deploy Dashboard"
 
-log "Starting dashboard..."
-$COMPOSE up -d dashboard
-sleep 5
+# Check if dashboard files exist
+if [ ! -d "dashboard" ]; then
+    log "Dashboard files not found. Downloading..."
 
-success "Dashboard deployed"
+    mkdir -p dashboard/js dashboard/css
+
+    log "Creating dashboard HTML files..."
+    # Download or use existing dashboard files from repo
+    if [ -f "dashboard/index.html" ]; then
+        success "Dashboard files already exist"
+    else
+        warn "Dashboard files missing. Will skip dashboard deployment."
+        warn "You can deploy dashboard later using: docker compose up -d dashboard"
+        SKIP_DASHBOARD=true
+    fi
+fi
+
+if [ "$SKIP_DASHBOARD" != "true" ]; then
+    # Create nginx config for dashboard
+    log "Creating nginx configuration..."
+    cat > dashboard/nginx.conf <<'NGINX_EOF'
+server {
+    listen 80;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # API proxy to backend
+    location /api/ {
+        proxy_pass http://backend:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    # Auth endpoints
+    location /auth/ {
+        proxy_pass http://backend:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    # Static files
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+}
+NGINX_EOF
+
+    log "Starting dashboard..."
+    $COMPOSE up -d dashboard
+    sleep 5
+
+    success "Dashboard deployed"
+else
+    warn "Dashboard deployment skipped (files not found)"
+    warn "Backend API is still accessible at http://localhost:$BACKEND_PORT"
+fi
 
 ################################################################################
 # PHASE 9: Initialize Ollama Model
@@ -525,10 +590,14 @@ else
 fi
 
 # Test Dashboard
-if curl -sf http://localhost:$DASHBOARD_PORT >/dev/null 2>&1; then
-    success "Dashboard: OK"
+if [ "$SKIP_DASHBOARD" != "true" ]; then
+    if curl -sf http://localhost:$DASHBOARD_PORT >/dev/null 2>&1; then
+        success "Dashboard: OK"
+    else
+        warn "Dashboard: Check logs with: docker logs emergency_dashboard"
+    fi
 else
-    warn "Dashboard: Check logs with: docker logs emergency_dashboard"
+    warn "Dashboard: Skipped (files not found)"
 fi
 
 ################################################################################
@@ -639,12 +708,28 @@ ${CYAN}════════════════════════�
 ${BOLD}Quick Access:${NC}
 ${CYAN}═══════════════════════════════════════════════════════════${NC}
 
+EOF
+
+if [ "$SKIP_DASHBOARD" != "true" ]; then
+    cat << EOF
 ${BOLD}📊 Web Dashboard${NC}
    ${GREEN}http://localhost:$DASHBOARD_PORT${NC}
 
    Username: ${YELLOW}$ADMIN_USER${NC}
    Password: ${YELLOW}$ADMIN_PASS${NC}
 
+EOF
+else
+    cat << EOF
+${YELLOW}⚠️  Web Dashboard${NC}
+   Dashboard files not found in repository
+   Backend API is fully functional
+   You can add dashboard later
+
+EOF
+fi
+
+cat << EOF
 ${BOLD}🔧 Backend API${NC}
    ${GREEN}http://localhost:$BACKEND_PORT${NC}
 
