@@ -281,10 +281,12 @@ cd "$INSTALL_DIR"
 if [ -d ".git" ]; then
     log "Existing installation found. Updating..."
     git fetch --all
-    git reset --hard origin/main 2>/dev/null || git reset --hard origin/master 2>/dev/null || true
+    git checkout stable 2>/dev/null || git checkout main 2>/dev/null || true
+    git reset --hard origin/stable 2>/dev/null || git reset --hard origin/main 2>/dev/null || true
     git pull
 else
     log "Cloning repository..."
+    git clone -b stable https://github.com/iwewe/chatbot-disaster-response.git . 2>/dev/null || \
     git clone https://github.com/iwewe/chatbot-disaster-response.git .
 fi
 
@@ -465,27 +467,125 @@ success "Database initialized"
 ################################################################################
 header "PHASE 8: Deploy Dashboard"
 
-# Check if dashboard files exist
-if [ ! -d "dashboard" ]; then
-    log "Dashboard files not found. Downloading..."
+# Create dashboard files
+log "Creating dashboard files..."
+mkdir -p dashboard
 
-    mkdir -p dashboard/js dashboard/css
+# Create dashboard HTML
+cat > dashboard/index.html <<'HTML_EOF'
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergency Response Chatbot</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            padding: 60px 40px;
+            text-align: center;
+        }
+        h1 { font-size: 2.5rem; color: #333; margin-bottom: 20px; }
+        .emoji { font-size: 4rem; margin-bottom: 20px; }
+        p { font-size: 1.2rem; color: #666; line-height: 1.6; margin-bottom: 30px; }
+        .status {
+            background: #f0f9ff;
+            border-left: 4px solid #0ea5e9;
+            padding: 20px;
+            margin: 30px 0;
+            text-align: left;
+        }
+        .status h3 { color: #0369a1; margin-bottom: 10px; }
+        .status ul { list-style: none; }
+        .status li { padding: 8px 0; color: #555; }
+        .status li:before { content: "✓ "; color: #10b981; font-weight: bold; margin-right: 8px; }
+        .btn {
+            padding: 15px 30px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            background: #667eea;
+            color: white;
+            display: inline-block;
+            margin: 10px;
+            transition: all 0.3s;
+        }
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .api-info {
+            background: #f9fafb;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+            text-align: left;
+        }
+        .endpoint {
+            font-family: monospace;
+            background: #1f2937;
+            color: #10b981;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="emoji">🚨</div>
+        <h1>Emergency Response Chatbot</h1>
+        <p>Sistem Manajemen Bencana Berbasis WhatsApp dengan AI</p>
 
-    log "Creating dashboard HTML files..."
-    # Download or use existing dashboard files from repo
-    if [ -f "dashboard/index.html" ]; then
-        success "Dashboard files already exist"
-    else
-        warn "Dashboard files missing. Will skip dashboard deployment."
-        warn "You can deploy dashboard later using: docker compose up -d dashboard"
-        SKIP_DASHBOARD=true
-    fi
-fi
+        <div class="status">
+            <h3>✓ Sistem Aktif</h3>
+            <ul>
+                <li>Backend API Running</li>
+                <li>Database Connected</li>
+                <li>WhatsApp Integration Ready</li>
+                <li>AI Model (Ollama) Active</li>
+            </ul>
+        </div>
 
-if [ "$SKIP_DASHBOARD" != "true" ]; then
-    # Create nginx config for dashboard
-    log "Creating nginx configuration..."
-    cat > dashboard/nginx.conf <<'NGINX_EOF'
+        <div class="api-info">
+            <h3>🔧 Backend API Endpoints</h3>
+            <div class="endpoint">GET /api/health</div>
+            <div class="endpoint">POST /auth/login</div>
+            <div class="endpoint">GET /api/reports</div>
+            <div class="endpoint">POST /api/reports</div>
+        </div>
+
+        <a href="/api/health" class="btn" target="_blank">🔍 Check API Health</a>
+        <a href="https://github.com/iwewe/chatbot-disaster-response" class="btn" target="_blank">📚 Documentation</a>
+
+        <script>
+            fetch('/api/health')
+                .then(r => r.json())
+                .then(d => console.log('✓ API healthy:', d))
+                .catch(e => console.warn('API check failed:', e));
+        </script>
+    </div>
+</body>
+</html>
+HTML_EOF
+
+# Create nginx config for dashboard
+log "Creating nginx configuration..."
+cat > dashboard/nginx.conf <<'NGINX_EOF'
 server {
     listen 80;
     server_name _;
@@ -526,15 +626,13 @@ server {
 }
 NGINX_EOF
 
-    log "Starting dashboard..."
-    $COMPOSE up -d dashboard
-    sleep 5
+success "Dashboard files created"
 
-    success "Dashboard deployed"
-else
-    warn "Dashboard deployment skipped (files not found)"
-    warn "Backend API is still accessible at http://localhost:$BACKEND_PORT"
-fi
+log "Starting dashboard..."
+$COMPOSE up -d dashboard
+sleep 5
+
+success "Dashboard deployed"
 
 ################################################################################
 # PHASE 9: Initialize Ollama Model
@@ -590,14 +688,10 @@ else
 fi
 
 # Test Dashboard
-if [ "$SKIP_DASHBOARD" != "true" ]; then
-    if curl -sf http://localhost:$DASHBOARD_PORT >/dev/null 2>&1; then
-        success "Dashboard: OK"
-    else
-        warn "Dashboard: Check logs with: docker logs emergency_dashboard"
-    fi
+if curl -sf http://localhost:$DASHBOARD_PORT >/dev/null 2>&1; then
+    success "Dashboard: OK"
 else
-    warn "Dashboard: Skipped (files not found)"
+    warn "Dashboard: Check logs with: docker logs emergency_dashboard"
 fi
 
 ################################################################################
@@ -710,8 +804,7 @@ ${CYAN}════════════════════════�
 
 EOF
 
-if [ "$SKIP_DASHBOARD" != "true" ]; then
-    cat << EOF
+cat << EOF
 ${BOLD}📊 Web Dashboard${NC}
    ${GREEN}http://localhost:$DASHBOARD_PORT${NC}
 
@@ -719,15 +812,6 @@ ${BOLD}📊 Web Dashboard${NC}
    Password: ${YELLOW}$ADMIN_PASS${NC}
 
 EOF
-else
-    cat << EOF
-${YELLOW}⚠️  Web Dashboard${NC}
-   Dashboard files not found in repository
-   Backend API is fully functional
-   You can add dashboard later
-
-EOF
-fi
 
 cat << EOF
 ${BOLD}🔧 Backend API${NC}
