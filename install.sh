@@ -240,7 +240,8 @@ success "Essential packages installed"
 
 # Install Docker
 if command -v docker &> /dev/null; then
-    log "Docker already installed: $(docker --version)"
+    success "Docker already installed: $(docker --version)"
+    log "Skipping Docker installation"
 else
     log "Installing Docker..."
 
@@ -285,11 +286,21 @@ mkdir -p "$INSTALL_DIR"
 cd "$INSTALL_DIR"
 
 if [ -d ".git" ]; then
-    log "Existing installation found. Updating..."
-    git fetch --all
-    git checkout stable 2>/dev/null || git checkout main 2>/dev/null || true
-    git reset --hard origin/stable 2>/dev/null || git reset --hard origin/main 2>/dev/null || true
-    git pull
+    success "Existing installation found at $INSTALL_DIR"
+
+    ask "Update code from repository? (y/N): "
+    read update_code
+
+    if [[ $update_code =~ ^[Yy]$ ]]; then
+        log "Updating from repository..."
+        git fetch --all
+        git checkout stable 2>/dev/null || git checkout main 2>/dev/null || true
+        git reset --hard origin/stable 2>/dev/null || git reset --hard origin/main 2>/dev/null || true
+        git pull
+        success "Code updated"
+    else
+        log "Keeping existing code (no update)"
+    fi
 else
     log "Cloning repository..."
     git clone -b stable https://github.com/iwewe/chatbot-disaster-response.git . 2>/dev/null || \
@@ -693,18 +704,27 @@ success "Dashboard deployed"
 ################################################################################
 header "PHASE 9: Initialize Ollama Model"
 
-log "Pulling Ollama model (this may take a few minutes)..."
-warn "Downloading qwen2.5:7b model (~4.7GB)..."
+# Check if model already exists
+log "Checking for existing Ollama models..."
+if docker exec emergency_ollama ollama list 2>/dev/null | grep -q "qwen2.5:7b"; then
+    success "Ollama model qwen2.5:7b already exists"
+    log "Skipping model download (~4.7GB saved!)"
+else
+    log "Pulling Ollama model (this may take a few minutes)..."
+    warn "Downloading qwen2.5:7b model (~4.7GB)..."
 
-docker exec emergency_ollama ollama pull qwen2.5:7b &
-OLLAMA_PID=$!
+    docker exec emergency_ollama ollama pull qwen2.5:7b &
+    OLLAMA_PID=$!
 
-# Show progress
-while kill -0 $OLLAMA_PID 2>/dev/null; do
-    echo -n "."
-    sleep 3
-done
-echo ""
+    # Show progress
+    while kill -0 $OLLAMA_PID 2>/dev/null; do
+        echo -n "."
+        sleep 3
+    done
+    echo ""
+
+    success "Ollama model downloaded"
+fi
 
 success "Ollama model ready"
 
