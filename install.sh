@@ -83,12 +83,18 @@ else
     warn "Cannot detect OS version"
 fi
 
-# Check disk space (need at least 10GB)
+# Check disk space (need at least 5GB for basic installation)
 AVAILABLE_GB=$(df / | awk 'NR==2 {print int($4/1024/1024)}')
 log "Available disk space: ${AVAILABLE_GB}GB"
-if [ $AVAILABLE_GB -lt 10 ]; then
-    error "Need at least 10GB free disk space. Available: ${AVAILABLE_GB}GB"
+if [ $AVAILABLE_GB -lt 5 ]; then
+    error "Need at least 5GB free disk space. Available: ${AVAILABLE_GB}GB"
     exit 1
+elif [ $AVAILABLE_GB -lt 10 ]; then
+    warn "Only ${AVAILABLE_GB}GB available. Recommended: 10GB+"
+    warn "Installation will proceed but may run slow when downloading Ollama model"
+    ask "Continue anyway? (y/N): "
+    read continue
+    [[ ! $continue =~ ^[Yy]$ ]] && exit 1
 fi
 
 # Check RAM (recommend at least 4GB)
