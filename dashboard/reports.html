@@ -1,153 +1,558 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Laporan - Emergency Response</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laporan - Emergency Response</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f3f4f6;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .back-btn {
+            font-size: 24px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .header-title h1 {
+            font-size: 20px;
+            color: #1f2937;
+        }
+
+        .btn-logout {
+            padding: 8px 16px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+        }
+
+        .filters {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f9fafb;
+        }
+
+        th {
+            padding: 12px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+            color: #6b7280;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        td {
+            padding: 12px;
+            font-size: 14px;
+            color: #374151;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        tbody tr:hover {
+            background: #f9fafb;
+            cursor: pointer;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-pending { background: #fef3c7; color: #92400e; }
+        .badge-verified { background: #dbeafe; color: #1e40af; }
+        .badge-assigned { background: #e0e7ff; color: #3730a3; }
+        .badge-in-progress { background: #ddd6fe; color: #5b21b6; }
+        .badge-resolved { background: #d1fae5; color: #065f46; }
+        .badge-closed { background: #e5e7eb; color: #374151; }
+
+        .badge-critical { background: #fee2e2; color: #991b1b; }
+        .badge-high { background: #fed7aa; color: #9a3412; }
+        .badge-medium { background: #fef3c7; color: #92400e; }
+        .badge-low { background: #dbeafe; color: #1e40af; }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e5e7eb;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 24px;
+        }
+
+        .page-btn {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .page-btn:hover {
+            background: #f3f4f6;
+        }
+
+        .page-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 24px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            font-size: 24px;
+            cursor: pointer;
+            background: none;
+            border: none;
+        }
+
+        .detail-row {
+            margin-bottom: 16px;
+        }
+
+        .detail-label {
+            font-size: 13px;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            color: #1f2937;
+        }
+    </style>
 </head>
-<body class="bg-gray-50">
-  <div class="flex h-screen overflow-hidden">
-    <!-- Sidebar -->
-    <aside class="bg-gray-900 text-white w-64 flex-shrink-0">
-      <div class="p-6">
-        <div class="flex items-center space-x-3 mb-8">
-          <div class="bg-red-600 w-10 h-10 rounded-lg flex items-center justify-center">
-            <i class="fas fa-heartbeat text-xl"></i>
-          </div>
-          <div>
-            <h2 class="font-bold text-lg">Emergency</h2>
-            <p class="text-xs text-gray-400">Response System</p>
-          </div>
-        </div>
-
-        <nav class="space-y-2">
-          <a href="./dashboard.html" class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-800">
-            <i class="fas fa-home"></i>
-            <span>Dashboard</span>
-          </a>
-          <a href="./reports.html" class="flex items-center space-x-3 bg-blue-600 px-4 py-3 rounded-lg">
-            <i class="fas fa-file-alt"></i>
-            <span>Laporan</span>
-          </a>
-          <a href="./users.html" class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-800">
-            <i class="fas fa-users"></i>
-            <span>Pengguna</span>
-          </a>
-          <a href="./map.html" class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-800">
-            <i class="fas fa-map-marked-alt"></i>
-            <span>Peta</span>
-          </a>
-        </nav>
-      </div>
-
-      <!-- User Profile -->
-      <div class="absolute bottom-0 w-64 p-6 border-t border-gray-800">
-        <div class="flex items-center space-x-3">
-          <div class="bg-gray-700 w-10 h-10 rounded-full flex items-center justify-center">
-            <i class="fas fa-user"></i>
-          </div>
-          <div class="flex-1">
-            <p class="font-semibold text-sm" id="userName">Admin</p>
-            <p class="text-xs text-gray-400" id="userRole">Administrator</p>
-          </div>
-          <button onclick="logout()" class="text-gray-400 hover:text-white">
-            <i class="fas fa-sign-out-alt"></i>
-          </button>
-        </div>
-      </div>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="flex-1 overflow-y-auto">
-      <!-- Header -->
-      <header class="bg-white shadow-sm p-6">
-        <div class="flex items-center justify-between">
-          <div>
-            <h1 class="text-2xl font-bold text-gray-800">Laporan Bencana</h1>
-            <p class="text-gray-600">Kelola dan verifikasi laporan masuk</p>
-          </div>
-          <div class="flex items-center space-x-4">
-            <button onclick="refreshReports()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
-              <i class="fas fa-sync-alt mr-2"></i>Refresh
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <!-- Filters -->
-      <div class="p-6">
-        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-              <select id="filterStatus" onchange="applyFilters()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                <option value="">Semua Status</option>
-                <option value="PENDING_VERIFICATION">Menunggu Verifikasi</option>
-                <option value="VERIFIED">Terverifikasi</option>
-                <option value="IN_PROGRESS">Dalam Proses</option>
-                <option value="RESOLVED">Selesai</option>
-                <option value="REJECTED">Ditolak</option>
-              </select>
+<body>
+    <div class="header">
+        <div class="header-left">
+            <a href="/dashboard.html" class="back-btn">←</a>
+            <div class="header-title">
+                <h1>Semua Laporan</h1>
             </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Jenis</label>
-              <select id="filterType" onchange="applyFilters()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                <option value="">Semua Jenis</option>
-                <option value="KORBAN">Korban</option>
-                <option value="KEBUTUHAN">Kebutuhan</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Urgensi</label>
-              <select id="filterUrgency" onchange="applyFilters()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                <option value="">Semua Urgensi</option>
-                <option value="CRITICAL">Kritis</option>
-                <option value="HIGH">Tinggi</option>
-                <option value="MEDIUM">Sedang</option>
-                <option value="LOW">Rendah</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Pencarian</label>
-              <input type="text" id="searchQuery" onkeyup="applyFilters()" placeholder="Cari laporan..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-            </div>
-          </div>
         </div>
-
-        <!-- Reports List -->
-        <div id="reportsList" class="space-y-4">
-          <!-- Will be populated by JS -->
-        </div>
-
-        <!-- Pagination -->
-        <div id="pagination" class="mt-6 flex justify-center">
-          <!-- Will be populated by JS -->
-        </div>
-      </div>
-    </main>
-  </div>
-
-  <!-- Report Detail Modal -->
-  <div id="reportModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-screen overflow-y-auto">
-      <div class="p-6 border-b border-gray-200 flex items-center justify-between">
-        <h2 class="text-2xl font-bold text-gray-800">Detail Laporan</h2>
-        <button onclick="closeReportModal()" class="text-gray-400 hover:text-gray-600">
-          <i class="fas fa-times text-2xl"></i>
-        </button>
-      </div>
-      <div id="reportModalContent" class="p-6">
-        <!-- Will be populated by JS -->
-      </div>
+        <button class="btn-logout" onclick="logout()">Logout</button>
     </div>
-  </div>
 
-  <script src="./js/auth.js"></script>
-  <script src="./js/reports.js"></script>
+    <div class="container">
+        <div class="card">
+            <div class="filters">
+                <div class="search-box">
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        placeholder="Cari nomor laporan, lokasi..."
+                    >
+                </div>
+                <select id="statusFilter">
+                    <option value="">Semua Status</option>
+                    <option value="PENDING_VERIFICATION">Pending Verification</option>
+                    <option value="VERIFIED">Verified</option>
+                    <option value="ASSIGNED">Assigned</option>
+                    <option value="IN_PROGRESS">In Progress</option>
+                    <option value="RESOLVED">Resolved</option>
+                    <option value="CLOSED">Closed</option>
+                </select>
+                <select id="typeFilter">
+                    <option value="">Semua Jenis</option>
+                    <option value="KORBAN">Korban</option>
+                    <option value="KEBUTUHAN">Kebutuhan</option>
+                    <option value="PENYALURAN">Penyaluran</option>
+                    <option value="PENGUNGSIAN">Pengungsian</option>
+                    <option value="INFRASTRUKTUR">Infrastruktur</option>
+                </select>
+            </div>
+
+            <div id="loadingState" class="loading">
+                <div class="spinner"></div>
+                <p>Memuat data...</p>
+            </div>
+
+            <div id="tableContainer" style="display: none;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>No. Laporan</th>
+                            <th>Jenis</th>
+                            <th>Lokasi</th>
+                            <th>Ringkasan</th>
+                            <th>Status</th>
+                            <th>Urgensi</th>
+                            <th>Tanggal</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportsTable"></tbody>
+                </table>
+
+                <div class="pagination" id="pagination"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detail Modal -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Detail Laporan</h2>
+                <button class="close-btn" onclick="closeModal()">×</button>
+            </div>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let token = localStorage.getItem('token');
+        let allReports = [];
+        let filteredReports = [];
+        const ITEMS_PER_PAGE = 20;
+        let currentPage = 1;
+
+        if (!token) {
+            window.location.href = '/index.html';
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/index.html';
+        }
+
+        function getBadgeClass(status) {
+            const map = {
+                'PENDING_VERIFICATION': 'badge-pending',
+                'VERIFIED': 'badge-verified',
+                'ASSIGNED': 'badge-assigned',
+                'IN_PROGRESS': 'badge-in-progress',
+                'RESOLVED': 'badge-resolved',
+                'CLOSED': 'badge-closed'
+            };
+            return map[status] || 'badge-pending';
+        }
+
+        function getUrgencyBadge(urgency) {
+            const map = {
+                'CRITICAL': 'badge-critical',
+                'HIGH': 'badge-high',
+                'MEDIUM': 'badge-medium',
+                'LOW': 'badge-low'
+            };
+            return map[urgency] || 'badge-medium';
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('id-ID', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        async function fetchReports() {
+            try {
+                const response = await fetch(`${API_BASE}/api/reports`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.status === 401) {
+                    logout();
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch reports');
+                }
+
+                allReports = await response.json();
+                filteredReports = allReports;
+                
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('tableContainer').style.display = 'block';
+                
+                renderTable();
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('loadingState').innerHTML = '<p>Gagal memuat data</p>';
+            }
+        }
+
+        function applyFilters() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            const typeFilter = document.getElementById('typeFilter').value;
+
+            filteredReports = allReports.filter(report => {
+                const matchSearch = !search || 
+                    report.reportNumber.toLowerCase().includes(search) ||
+                    report.location.toLowerCase().includes(search) ||
+                    (report.summary && report.summary.toLowerCase().includes(search));
+                
+                const matchStatus = !statusFilter || report.status === statusFilter;
+                const matchType = !typeFilter || report.type === typeFilter;
+
+                return matchSearch && matchStatus && matchType;
+            });
+
+            currentPage = 1;
+            renderTable();
+        }
+
+        function renderTable() {
+            const start = (currentPage - 1) * ITEMS_PER_PAGE;
+            const end = start + ITEMS_PER_PAGE;
+            const pageReports = filteredReports.slice(start, end);
+
+            const tbody = document.getElementById('reportsTable');
+            tbody.innerHTML = pageReports.map(report => `
+                <tr onclick="showDetail('${report.id}')">
+                    <td><strong>${report.reportNumber}</strong></td>
+                    <td>${report.type}</td>
+                    <td>${report.location}</td>
+                    <td>${(report.summary || '').substring(0, 50)}...</td>
+                    <td><span class="badge ${getBadgeClass(report.status)}">${report.status.replace(/_/g, ' ')}</span></td>
+                    <td><span class="badge ${getUrgencyBadge(report.urgency)}">${report.urgency}</span></td>
+                    <td>${formatDate(report.createdAt)}</td>
+                </tr>
+            `).join('');
+
+            renderPagination();
+        }
+
+        function renderPagination() {
+            const totalPages = Math.ceil(filteredReports.length / ITEMS_PER_PAGE);
+            const pagination = document.getElementById('pagination');
+            
+            let html = '';
+            
+            if (currentPage > 1) {
+                html += `<button class="page-btn" onclick="changePage(${currentPage - 1})">← Prev</button>`;
+            }
+
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                    html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+                } else if (i === currentPage - 3 || i === currentPage + 3) {
+                    html += `<span>...</span>`;
+                }
+            }
+
+            if (currentPage < totalPages) {
+                html += `<button class="page-btn" onclick="changePage(${currentPage + 1})">Next →</button>`;
+            }
+
+            pagination.innerHTML = html;
+        }
+
+        function changePage(page) {
+            currentPage = page;
+            renderTable();
+            window.scrollTo(0, 0);
+        }
+
+        function showDetail(reportId) {
+            const report = allReports.find(r => r.id === reportId);
+            if (!report) return;
+
+            const modal = document.getElementById('detailModal');
+            const modalBody = document.getElementById('modalBody');
+
+            modalBody.innerHTML = `
+                <div class="detail-row">
+                    <div class="detail-label">Nomor Laporan</div>
+                    <div class="detail-value"><strong>${report.reportNumber}</strong></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Jenis</div>
+                    <div class="detail-value">${report.type}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Status</div>
+                    <div class="detail-value">
+                        <span class="badge ${getBadgeClass(report.status)}">${report.status.replace(/_/g, ' ')}</span>
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Urgensi</div>
+                    <div class="detail-value">
+                        <span class="badge ${getUrgencyBadge(report.urgency)}">${report.urgency}</span>
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Lokasi</div>
+                    <div class="detail-value">${report.location}</div>
+                </div>
+                ${report.locationDetail ? `
+                <div class="detail-row">
+                    <div class="detail-label">Detail Lokasi</div>
+                    <div class="detail-value">${report.locationDetail}</div>
+                </div>
+                ` : ''}
+                <div class="detail-row">
+                    <div class="detail-label">Ringkasan</div>
+                    <div class="detail-value">${report.summary || '-'}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Pesan Asli</div>
+                    <div class="detail-value">${report.rawMessage || '-'}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Pelapor</div>
+                    <div class="detail-value">${report.reporterPhone}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Tanggal Dibuat</div>
+                    <div class="detail-value">${formatDate(report.createdAt)}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Terakhir Update</div>
+                    <div class="detail-value">${formatDate(report.updatedAt)}</div>
+                </div>
+            `;
+
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('detailModal').style.display = 'none';
+        }
+
+        // Event listeners
+        document.getElementById('searchInput').addEventListener('input', applyFilters);
+        document.getElementById('statusFilter').addEventListener('change', applyFilters);
+        document.getElementById('typeFilter').addEventListener('change', applyFilters);
+
+        // Close modal on outside click
+        document.getElementById('detailModal').addEventListener('click', (e) => {
+            if (e.target.id === 'detailModal') {
+                closeModal();
+            }
+        });
+
+        // Load data
+        fetchReports();
+    </script>
 </body>
 </html>
