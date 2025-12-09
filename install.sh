@@ -629,7 +629,10 @@ NGINX_EOF
 success "Dashboard files created"
 
 # Check if dashboard service exists in docker-compose.yml
-if ! grep -q "container_name: emergency_dashboard" docker-compose.yml; then
+log "Checking docker-compose.yml for dashboard service..."
+if grep -q "container_name: emergency_dashboard" docker-compose.yml; then
+    success "Dashboard service already exists in docker-compose.yml"
+else
     warn "Dashboard service not found in docker-compose.yml"
     log "Adding dashboard service to docker-compose.yml..."
 
@@ -671,8 +674,6 @@ if ! grep -q "container_name: emergency_dashboard" docker-compose.yml; then
 " docker-compose.yml
 
     success "Dashboard service added to docker-compose.yml"
-else
-    success "Dashboard service already exists in docker-compose.yml"
 fi
 
 log "Starting dashboard..."
