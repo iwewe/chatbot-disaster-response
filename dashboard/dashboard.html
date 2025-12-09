@@ -10,46 +10,112 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #f3f4f6;
+            display: flex;
             min-height: 100vh;
         }
 
-        .header {
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
             background: white;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            padding: 16px 24px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            padding: 24px 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
         }
 
-        .header-left {
+        .logo {
+            padding: 0 24px 24px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 12px;
+        }
+
+        .logo-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 4px;
+        }
+
+        .logo-subtitle {
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        .nav-section {
+            padding: 16px 0;
+        }
+
+        .nav-label {
+            padding: 8px 24px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-item {
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #4b5563;
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .nav-item:hover {
+            background: #f3f4f6;
+            color: #667eea;
+        }
+
+        .nav-item.active {
+            background: #ede9fe;
+            color: #667eea;
+            border-right: 3px solid #667eea;
+            font-weight: 600;
+        }
+
+        .nav-icon {
+            font-size: 20px;
+        }
+
+        .user-profile {
+            padding: 16px 24px;
+            border-top: 1px solid #e5e7eb;
             display: flex;
             align-items: center;
             gap: 12px;
         }
 
-        .logo {
-            font-size: 28px;
-        }
-
-        .header-title h1 {
-            font-size: 20px;
-            color: #1f2937;
-        }
-
-        .header-title p {
-            font-size: 13px;
-            color: #6b7280;
-        }
-
-        .header-right {
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: #667eea;
+            border-radius: 50%;
             display: flex;
             align-items: center;
-            gap: 16px;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
         }
 
-        .user-info {
-            text-align: right;
+        .user-info-text {
+            flex: 1;
         }
 
         .user-name {
@@ -64,23 +130,20 @@
         }
 
         .btn-logout {
-            padding: 8px 16px;
-            background: #ef4444;
-            color: white;
+            padding: 6px 12px;
+            background: #fee2e2;
+            color: #991b1b;
             border: none;
             border-radius: 6px;
-            font-size: 14px;
+            font-size: 12px;
             cursor: pointer;
-            transition: all 0.2s;
+            font-weight: 600;
         }
 
-        .btn-logout:hover {
-            background: #dc2626;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
+        /* Main Content */
+        .main-content {
+            margin-left: 280px;
+            flex: 1;
             padding: 24px;
         }
 
@@ -151,6 +214,14 @@
 
         .btn:hover {
             background: #5568d3;
+        }
+
+        .btn-success {
+            background: #10b981;
+        }
+
+        .btn-success:hover {
+            background: #059669;
         }
 
         table {
@@ -232,19 +303,55 @@
             font-size: 48px;
             margin-bottom: 16px;
         }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                position: relative;
+                height: auto;
+            }
+            .main-content {
+                margin-left: 0;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="header-left">
-            <div class="logo">🚨</div>
-            <div class="header-title">
-                <h1>Emergency Response Dashboard</h1>
-                <p>Sistem Manajemen Bencana</p>
-            </div>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo">
+            <div class="logo-icon">🚨</div>
+            <div class="logo-title">Emergency Response</div>
+            <div class="logo-subtitle">Sistem Manajemen Bencana</div>
         </div>
-        <div class="header-right">
-            <div class="user-info">
+
+        <div class="nav-section">
+            <div class="nav-label">Monitoring</div>
+            <a href="/dashboard.html" class="nav-item active">
+                <span class="nav-icon">🏠</span>
+                <span>Dashboard</span>
+            </a>
+            <a href="/reports.html" class="nav-item">
+                <span class="nav-icon">📊</span>
+                <span>Semua Laporan</span>
+            </a>
+            <a href="/create-report.html" class="nav-item">
+                <span class="nav-icon">➕</span>
+                <span>Buat Laporan</span>
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-label">Public Access</div>
+            <a href="/public-form.html" class="nav-item" target="_blank">
+                <span class="nav-icon">🌐</span>
+                <span>Form Publik</span>
+            </a>
+        </div>
+
+        <div class="user-profile">
+            <div class="user-avatar" id="userAvatar">A</div>
+            <div class="user-info-text">
                 <div class="user-name" id="userName">Loading...</div>
                 <div class="user-role" id="userRole">-</div>
             </div>
@@ -252,7 +359,8 @@
         </div>
     </div>
 
-    <div class="container">
+    <!-- Main Content -->
+    <div class="main-content">
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-icon">📊</div>
@@ -279,7 +387,10 @@
         <div class="card">
             <div class="card-header">
                 <h2 class="card-title">Laporan Terbaru</h2>
-                <a href="/reports.html" class="btn">Lihat Semua</a>
+                <div style="display: flex; gap: 12px;">
+                    <a href="/create-report.html" class="btn btn-success">+ Buat Laporan</a>
+                    <a href="/reports.html" class="btn">Lihat Semua</a>
+                </div>
             </div>
 
             <div id="loadingState" class="loading">
@@ -321,8 +432,9 @@
         }
 
         // Display user info
-        document.getElementById('userName').textContent = user.name || user.username || 'User';
+        document.getElementById('userName').textContent = user.name || user.phoneNumber || 'User';
         document.getElementById('userRole').textContent = user.role || 'ADMIN';
+        document.getElementById('userAvatar').textContent = (user.name || 'A')[0].toUpperCase();
 
         function logout() {
             localStorage.removeItem('token');
@@ -409,14 +521,14 @@
 
             } catch (error) {
                 console.error('Error fetching data:', error);
-                document.getElementById('loadingState').innerHTML = '<p>Gagal memuat data</p>';
+                document.getElementById('loadingState').innerHTML = '<p>Gagal memuat data. Pastikan backend API berjalan.</p>';
             }
         }
 
         function renderReports(reports) {
             const tbody = document.getElementById('reportsTable');
             tbody.innerHTML = reports.map(report => `
-                <tr>
+                <tr onclick="window.location.href='/reports.html'" style="cursor: pointer;">
                     <td><strong>${report.reportNumber}</strong></td>
                     <td>${report.type}</td>
                     <td>${report.location}</td>
