@@ -380,7 +380,8 @@
                     throw new Error('Failed to fetch reports');
                 }
 
-                const reports = await response.json();
+                const result = await response.json();
+                const reports = result.success ? result.data : result;
 
                 // Calculate stats
                 const stats = {

@@ -264,10 +264,11 @@
                     body: JSON.stringify({ username, password })
                 });
 
-                const data = await response.json();
+                const result = await response.json();
 
-                if (response.ok) {
-                    // Save token
+                if (response.ok && result.success) {
+                    // Save token - backend returns { success: true, data: { token, user } }
+                    const data = result.data;
                     localStorage.setItem('token', data.token);
                     localStorage.setItem('user', JSON.stringify(data.user));
 
@@ -278,7 +279,7 @@
                         window.location.href = '/dashboard.html';
                     }, 500);
                 } else {
-                    showAlert(data.message || 'Login gagal. Periksa username dan password Anda.');
+                    showAlert(result.error || result.message || 'Login gagal. Periksa username dan password Anda.');
                 }
             } catch (error) {
                 console.error('Login error:', error);

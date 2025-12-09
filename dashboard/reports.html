@@ -386,7 +386,8 @@
                     throw new Error('Failed to fetch reports');
                 }
 
-                allReports = await response.json();
+                const result = await response.json();
+                allReports = result.success ? result.data : result;
                 filteredReports = allReports;
                 
                 document.getElementById('loadingState').style.display = 'none';
