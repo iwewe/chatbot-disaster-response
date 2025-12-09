@@ -628,6 +628,53 @@ NGINX_EOF
 
 success "Dashboard files created"
 
+# Check if dashboard service exists in docker-compose.yml
+if ! grep -q "container_name: emergency_dashboard" docker-compose.yml; then
+    warn "Dashboard service not found in docker-compose.yml"
+    log "Adding dashboard service to docker-compose.yml..."
+
+    # Find the line number before "# Networks" or "networks:" section
+    LINE_NUM=$(grep -n "^# ============================================" docker-compose.yml | grep -B1 "Networks" | head -1 | cut -d: -f1)
+
+    if [ -z "$LINE_NUM" ]; then
+        LINE_NUM=$(grep -n "^networks:" docker-compose.yml | head -1 | cut -d: -f1)
+    fi
+
+    if [ -z "$LINE_NUM" ]; then
+        error "Cannot find where to insert dashboard service in docker-compose.yml"
+    fi
+
+    # Insert dashboard service before networks section
+    sed -i "${LINE_NUM}i\\
+\\
+  # ============================================\\
+  # Web Dashboard\\
+  # ============================================\\
+  dashboard:\\
+    image: nginx:alpine\\
+    container_name: emergency_dashboard\\
+    restart: unless-stopped\\
+    ports:\\
+      - \"8080:80\"\\
+    volumes:\\
+      - ./dashboard:/usr/share/nginx/html:ro\\
+      - ./dashboard/nginx.conf:/etc/nginx/conf.d/default.conf:ro\\
+    depends_on:\\
+      - backend\\
+    networks:\\
+      - emergency_network\\
+    healthcheck:\\
+      test: [\"CMD\", \"wget\", \"-q\", \"--spider\", \"http://localhost\"]\\
+      interval: 30s\\
+      timeout: 10s\\
+      retries: 3\\
+" docker-compose.yml
+
+    success "Dashboard service added to docker-compose.yml"
+else
+    success "Dashboard service already exists in docker-compose.yml"
+fi
+
 log "Starting dashboard..."
 $COMPOSE up -d dashboard
 sleep 5
