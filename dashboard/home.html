@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pantau Bencana - Emergency Response System</title>
     <meta name="description" content="Pemantauan bencana dan koordinasi tanggap darurat. Lapor darurat, pantau logistik, dan koordinasi relawan.">
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBDaeWicvigtP9xPv919E-RNoxfvC-Hqik&libraries=places"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         * {
             margin: 0;
@@ -632,6 +633,67 @@
             display: none;
         }
 
+        /* Map Controls */
+        .map-controls {
+            margin-bottom: 16px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn-location {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-location:hover {
+            background: #5568d3;
+        }
+
+        .btn-location:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .coordinates-display {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .coordinate-input {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .coordinate-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6b7280;
+        }
+
+        .coordinate-value {
+            padding: 8px 12px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            color: #374151;
+            font-family: monospace;
+        }
+
         /* Loading animation */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
@@ -739,6 +801,27 @@
                 <button class="close-btn" onclick="closeShelterModal()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="map-controls">
+                    <button type="button" class="btn-location" onclick="useMyLocation('shelter')">
+                        📍 Gunakan Lokasi Saya
+                    </button>
+                </div>
+
+                <div class="map-container">
+                    <div id="mapShelter"></div>
+                </div>
+
+                <div class="coordinates-display">
+                    <div class="coordinate-input">
+                        <span class="coordinate-label">Latitude</span>
+                        <div class="coordinate-value" id="shelterLat">-6.2088</div>
+                    </div>
+                    <div class="coordinate-input">
+                        <span class="coordinate-label">Longitude</span>
+                        <div class="coordinate-value" id="shelterLng">106.8456</div>
+                    </div>
+                </div>
+
                 <div id="shelterAlert" class="alert"></div>
 
                 <form id="shelterForm" onsubmit="submitShelter(event)">
@@ -954,8 +1037,25 @@
                 <button class="close-btn" onclick="closeRequestModal()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="map-controls">
+                    <button type="button" class="btn-location" onclick="useMyLocation('request')">
+                        📍 Gunakan Lokasi Saya
+                    </button>
+                </div>
+
                 <div class="map-container">
                     <div id="mapRequest"></div>
+                </div>
+
+                <div class="coordinates-display">
+                    <div class="coordinate-input">
+                        <span class="coordinate-label">Latitude</span>
+                        <div class="coordinate-value" id="requestLat">-6.2088</div>
+                    </div>
+                    <div class="coordinate-input">
+                        <span class="coordinate-label">Longitude</span>
+                        <div class="coordinate-value" id="requestLng">106.8456</div>
+                    </div>
                 </div>
 
                 <div id="requestAlert" class="alert"></div>
@@ -1075,8 +1175,8 @@
 
     <script>
         const API_BASE = window.location.origin;
-        let map, mapMissing, mapRequest;
-        let marker, markerMissing, markerRequest;
+        let mapShelter, mapRequest;
+        let markerShelter, markerRequest;
         let uploadedPhoto = null;
 
         // Slideshow functionality
@@ -1100,69 +1200,105 @@
         setInterval(nextSlide, 5000);
         showSlide(0);
 
-        // Initialize Maps
-        function initMap() {
-            // Map for Shelter
-            const defaultLocation = { lat: -6.2088, lng: 106.8456 }; // Jakarta
+        // Initialize Leaflet Maps
+        function initLeafletMap(containerId, type) {
+            const defaultLocation = [-6.2088, 106.8456]; // Jakarta [lat, lng]
 
-            map = new google.maps.Map(document.getElementById('map'), {
+            // Create map
+            const map = L.map(containerId, {
                 center: defaultLocation,
                 zoom: 13
             });
 
-            marker = new google.maps.Marker({
-                position: defaultLocation,
-                map: map,
+            // Add OpenStreetMap tile layer
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
+
+            // Add draggable marker
+            const marker = L.marker(defaultLocation, {
                 draggable: true,
-                title: 'Lokasi Pengungsian'
+                title: type === 'shelter' ? 'Lokasi Pengungsian' : 'Lokasi Request Bantuan'
+            }).addTo(map);
+
+            // Update coordinates display when marker is dragged
+            marker.on('dragend', function() {
+                const pos = marker.getLatLng();
+                updateCoordinateDisplay(type, pos.lat, pos.lng);
             });
 
-            // Map for Missing Person
-            mapMissing = new google.maps.Map(document.getElementById('mapMissing'), {
-                center: defaultLocation,
-                zoom: 13
-            });
+            // Initialize coordinate display
+            updateCoordinateDisplay(type, defaultLocation[0], defaultLocation[1]);
 
-            markerMissing = new google.maps.Marker({
-                position: defaultLocation,
-                map: mapMissing,
-                draggable: true,
-                title: 'Lokasi Terakhir Terlihat'
-            });
+            return { map, marker };
+        }
 
-            // Map for Request Bantuan
-            mapRequest = new google.maps.Map(document.getElementById('mapRequest'), {
-                center: defaultLocation,
-                zoom: 13
-            });
+        // Update coordinate display
+        function updateCoordinateDisplay(type, lat, lng) {
+            const latId = type === 'shelter' ? 'shelterLat' : 'requestLat';
+            const lngId = type === 'shelter' ? 'shelterLng' : 'requestLng';
 
-            markerRequest = new google.maps.Marker({
-                position: defaultLocation,
-                map: mapRequest,
-                draggable: true,
-                title: 'Lokasi Request Bantuan'
-            });
+            document.getElementById(latId).textContent = lat.toFixed(6);
+            document.getElementById(lngId).textContent = lng.toFixed(6);
+        }
 
-            // Auto-detect location
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const pos = {
-                            lat: position.coords.latitude,
-                            lng: position.coords.longitude
-                        };
-                        map.setCenter(pos);
-                        marker.setPosition(pos);
-                        mapMissing.setCenter(pos);
-                        markerMissing.setPosition(pos);
-                        mapRequest.setCenter(pos);
-                        markerRequest.setPosition(pos);
-                    },
-                    () => {
-                        console.log('Geolocation failed, using default location');
-                    }
-                );
+        // Use My Location function
+        function useMyLocation(type) {
+            if (!navigator.geolocation) {
+                alert('Geolocation tidak didukung oleh browser Anda');
+                return;
             }
+
+            const button = event.target;
+            button.disabled = true;
+            button.textContent = '🔄 Mendapatkan lokasi...';
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+
+                    if (type === 'shelter') {
+                        if (mapShelter) {
+                            mapShelter.map.setView([lat, lng], 15);
+                            mapShelter.marker.setLatLng([lat, lng]);
+                            updateCoordinateDisplay('shelter', lat, lng);
+                        }
+                    } else if (type === 'request') {
+                        if (mapRequest) {
+                            mapRequest.map.setView([lat, lng], 15);
+                            mapRequest.marker.setLatLng([lat, lng]);
+                            updateCoordinateDisplay('request', lat, lng);
+                        }
+                    }
+
+                    button.disabled = false;
+                    button.textContent = '📍 Gunakan Lokasi Saya';
+                },
+                (error) => {
+                    console.error('Geolocation error:', error);
+                    let errorMsg = 'Gagal mendapatkan lokasi. ';
+
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMsg += 'Izin lokasi ditolak.';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMsg += 'Informasi lokasi tidak tersedia.';
+                            break;
+                        case error.TIMEOUT:
+                            errorMsg += 'Waktu permintaan habis.';
+                            break;
+                        default:
+                            errorMsg += 'Kesalahan tidak diketahui.';
+                    }
+
+                    alert(errorMsg);
+                    button.disabled = false;
+                    button.textContent = '📍 Gunakan Lokasi Saya';
+                }
+            );
         }
 
         // Modal Functions
@@ -1170,11 +1306,10 @@
             document.getElementById('shelterModal').classList.add('active');
             document.body.style.overflow = 'hidden';
             setTimeout(() => {
-                if (map) {
-                    google.maps.event.trigger(map, 'resize');
-                    map.setCenter(marker.getPosition());
+                if (!mapShelter) {
+                    mapShelter = initLeafletMap('mapShelter', 'shelter');
                 } else {
-                    initMap();
+                    mapShelter.map.invalidateSize();
                 }
             }, 100);
         }
@@ -1189,14 +1324,6 @@
         function openMissingPersonModal() {
             document.getElementById('missingPersonModal').classList.add('active');
             document.body.style.overflow = 'hidden';
-            setTimeout(() => {
-                if (mapMissing) {
-                    google.maps.event.trigger(mapMissing, 'resize');
-                    mapMissing.setCenter(markerMissing.getPosition());
-                } else {
-                    initMap();
-                }
-            }, 100);
         }
 
         function closeMissingPersonModal() {
@@ -1211,11 +1338,10 @@
             document.getElementById('requestModal').classList.add('active');
             document.body.style.overflow = 'hidden';
             setTimeout(() => {
-                if (mapRequest) {
-                    google.maps.event.trigger(mapRequest, 'resize');
-                    mapRequest.setCenter(markerRequest.getPosition());
+                if (!mapRequest) {
+                    mapRequest = initLeafletMap('mapRequest', 'request');
                 } else {
-                    initMap();
+                    mapRequest.map.invalidateSize();
                 }
             }, 100);
         }
@@ -1292,7 +1418,7 @@
             submitBtn.textContent = 'Mengirim...';
 
             const formData = new FormData(form);
-            const position = marker.getPosition();
+            const position = mapShelter.marker.getLatLng();
 
             const data = {
                 type: 'PENGUNGSIAN',
@@ -1300,8 +1426,8 @@
                 reportSource: 'web',
                 reporterPhone: '+62' + formData.get('picPhone'),
                 location: formData.get('address'),
-                latitude: position.lat(),
-                longitude: position.lng(),
+                latitude: position.lat,
+                longitude: position.lng,
                 shelter: {
                     name: formData.get('locationName') || formData.get('shelterType'),
                     type: formData.get('shelterType'),
@@ -1360,7 +1486,6 @@
             submitBtn.textContent = 'Mengirim...';
 
             const formData = new FormData(form);
-            const position = markerMissing.getPosition();
 
             const data = {
                 type: 'KORBAN',
@@ -1369,8 +1494,8 @@
                 reportSource: 'web',
                 reporterPhone: '+62' + formData.get('familyPhone'),
                 location: formData.get('lastSeenLocation'),
-                latitude: position.lat(),
-                longitude: position.lng(),
+                latitude: null,
+                longitude: null,
                 person: {
                     name: formData.get('personName'),
                     gender: formData.get('gender'),
@@ -1429,7 +1554,7 @@
             submitBtn.textContent = 'Mengirim...';
 
             const formData = new FormData(form);
-            const position = markerRequest.getPosition();
+            const position = mapRequest.marker.getLatLng();
 
             const data = {
                 type: 'BANTUAN',
@@ -1437,8 +1562,8 @@
                 reportSource: 'web',
                 reporterPhone: '+62' + formData.get('reporterPhone'),
                 location: formData.get('location'),
-                latitude: position.lat(),
-                longitude: position.lng(),
+                latitude: position.lat,
+                longitude: position.lng,
                 rawMessage: `${formData.get('requestType')}: ${formData.get('description')}`,
                 summary: formData.get('description').substring(0, 100),
                 assistance: {
@@ -1501,11 +1626,6 @@
                     closeRequestModal();
                 }
             }
-        }
-
-        // Initialize map when page loads
-        window.onload = function() {
-            initMap();
         }
     </script>
 </body>
