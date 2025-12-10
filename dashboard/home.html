@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pantau Bencana - Emergency Response System</title>
+    <meta name="description" content="Pemantauan bencana dan koordinasi tanggap darurat. Lapor darurat, pantau logistik, dan koordinasi relawan.">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Hero Section with Background Slideshow */
+        .hero-section {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background: #0f172a;
+        }
+
+        /* Background Slideshow */
+        .slideshow-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+
+        .slide.active {
+            opacity: 1;
+        }
+
+        .slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .slide-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+        }
+
+        /* Backdrop Blur Overlay */
+        .backdrop-blur-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(2px);
+            z-index: 1;
+        }
+
+        /* Content */
+        .hero-content {
+            position: relative;
+            z-index: 10;
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 60px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 60px;
+        }
+
+        @media (min-width: 1024px) {
+            .hero-content {
+                flex-direction: row;
+                justify-content: space-between;
+            }
+        }
+
+        .hero-text {
+            flex: 1;
+            text-align: center;
+            color: white;
+        }
+
+        @media (min-width: 640px) {
+            .hero-text {
+                text-align: left;
+            }
+        }
+
+        .hero-text h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 24px;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        @media (min-width: 640px) {
+            .hero-text h1 {
+                font-size: 3.75rem;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .hero-text h1 {
+                font-size: 4.5rem;
+            }
+        }
+
+        .hero-text p {
+            font-size: 1rem;
+            line-height: 1.7;
+            color: #e5e7eb;
+            margin-bottom: 32px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            max-width: 600px;
+        }
+
+        @media (min-width: 640px) {
+            .hero-text p {
+                font-size: 1.25rem;
+            }
+        }
+
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            align-items: center;
+        }
+
+        @media (min-width: 640px) {
+            .button-group {
+                flex-direction: row;
+                align-items: flex-start;
+            }
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 18px 32px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            min-width: 240px;
+        }
+
+        @media (min-width: 640px) {
+            .btn {
+                min-width: auto;
+            }
+        }
+
+        .btn-primary {
+            background: white;
+            color: #1f2937;
+        }
+
+        .btn-primary:hover {
+            background: #f3f4f6;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #b91c1c;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4);
+        }
+
+        .btn-icon {
+            font-size: 20px;
+        }
+
+        .secondary-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        @media (min-width: 640px) {
+            .secondary-buttons {
+                flex-direction: row;
+            }
+        }
+
+        /* Contact Card */
+        .contact-card {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 32px;
+            max-width: 450px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .contact-card h3 {
+            color: white;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .contact-icon {
+            color: #10b981;
+            font-size: 20px;
+        }
+
+        .contact-info {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .contact-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .contact-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: all 0.3s;
+            font-size: 24px;
+        }
+
+        .contact-btn.whatsapp {
+            background: #10b981;
+            color: white;
+        }
+
+        .contact-btn.whatsapp:hover {
+            background: #059669;
+            transform: scale(1.1);
+        }
+
+        .contact-btn.telegram {
+            background: #0088cc;
+            color: white;
+        }
+
+        .contact-btn.telegram:hover {
+            background: #006699;
+            transform: scale(1.1);
+        }
+
+        .divider {
+            margin: 20px 0;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 14px;
+        }
+
+        .admin-link {
+            text-align: center;
+        }
+
+        .admin-link a {
+            color: #a855f7;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .admin-link a:hover {
+            color: #9333ea;
+            text-decoration: underline;
+        }
+
+        /* Loading animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.7s ease-out forwards;
+        }
+
+        .delay-200 {
+            animation-delay: 0.2s;
+            opacity: 0;
+        }
+
+        .delay-300 {
+            animation-delay: 0.3s;
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="hero-section">
+        <!-- Background Slideshow -->
+        <div class="slideshow-container">
+            <div class="slide active">
+                <img src="https://images.unsplash.com/photo-1547683905-f686c993aae5?w=1920" alt="Emergency Response">
+                <div class="slide-overlay"></div>
+            </div>
+            <div class="slide">
+                <img src="https://images.unsplash.com/photo-1504813184591-01572f98c85f?w=1920" alt="Disaster Response">
+                <div class="slide-overlay"></div>
+            </div>
+            <div class="slide">
+                <img src="https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=1920" alt="Emergency Services">
+                <div class="slide-overlay"></div>
+            </div>
+            <div class="slide">
+                <img src="https://images.unsplash.com/photo-1534629938736-b1b076b9c2c6?w=1920" alt="Relief Efforts">
+                <div class="slide-overlay"></div>
+            </div>
+        </div>
+
+        <!-- Backdrop Blur Overlay -->
+        <div class="backdrop-blur-overlay"></div>
+
+        <!-- Hero Content -->
+        <div class="hero-content">
+            <!-- Text Section -->
+            <div class="hero-text animate-fade-in">
+                <h1>Pantau Penanganan Bencana</h1>
+                <p>
+                    Sistem informasi tanggap darurat berbasis kolaborasi warga.
+                    Laporkan kejadian bencana, lacak status pengungsian, dan koordinasi
+                    bantuan darurat secara real-time.
+                </p>
+
+                <div class="button-group">
+                    <a href="/public-form.html" class="btn btn-primary">
+                        <span class="btn-icon">📋</span>
+                        Laporkan Bencana
+                    </a>
+
+                    <div class="secondary-buttons">
+                        <a href="/public-form.html?type=shelter" class="btn btn-danger">
+                            <span class="btn-icon">🏕️</span>
+                            Titik Pengungsian
+                        </a>
+                        <a href="/public-form.html?type=missing" class="btn btn-danger">
+                            <span class="btn-icon">🔍</span>
+                            Orang Hilang
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Card -->
+            <div class="contact-card animate-fade-in delay-300">
+                <h3>
+                    <span class="contact-icon">📞</span>
+                    Hubungi Kami
+                </h3>
+
+                <div class="contact-info">
+                    <div class="contact-buttons">
+                        <a href="https://wa.me/6285124323212" target="_blank" class="contact-btn whatsapp" title="WhatsApp">
+                            <span>💬</span>
+                        </a>
+                        <a href="https://t.me/emergencyresponse" target="_blank" class="contact-btn telegram" title="Telegram">
+                            <span>✈️</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="divider">atau</div>
+
+                <div class="admin-link">
+                    <a href="/index.html">Login untuk Admin →</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Slideshow functionality
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+
+        function showSlide(index) {
+            slides.forEach((slide, i) => {
+                slide.classList.remove('active');
+                if (i === index) {
+                    slide.classList.add('active');
+                }
+            });
+        }
+
+        function nextSlide() {
+            currentSlide = (currentSlide + 1) % slides.length;
+            showSlide(currentSlide);
+        }
+
+        // Change slide every 5 seconds
+        setInterval(nextSlide, 5000);
+
+        // Initialize
+        showSlide(0);
+    </script>
+</body>
+</html>
