@@ -546,6 +546,81 @@
             border: 1px solid #fca5a5;
         }
 
+        /* Photo Upload */
+        .photo-upload-container {
+            border: 2px dashed #d1d5db;
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+            background: #f9fafb;
+        }
+
+        .photo-upload-container:hover {
+            border-color: #667eea;
+            background: #f3f4f6;
+        }
+
+        .photo-upload-container.has-image {
+            border-style: solid;
+            border-color: #10b981;
+            background: #ecfdf5;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            color: #9ca3af;
+        }
+
+        .upload-text {
+            color: #6b7280;
+            font-size: 0.875rem;
+            margin-bottom: 8px;
+        }
+
+        .upload-hint {
+            color: #9ca3af;
+            font-size: 0.75rem;
+        }
+
+        .photo-preview {
+            display: none;
+            margin-top: 16px;
+        }
+
+        .photo-preview.show {
+            display: block;
+        }
+
+        .photo-preview img {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .remove-photo-btn {
+            margin-top: 12px;
+            padding: 8px 16px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .remove-photo-btn:hover {
+            background: #dc2626;
+        }
+
+        .file-input-hidden {
+            display: none;
+        }
+
         /* Loading animation */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
@@ -603,9 +678,9 @@
                 </p>
 
                 <div class="button-group">
-                    <button onclick="openReportModal()" class="btn btn-primary">
-                        <span class="btn-icon">🗺️</span>
-                        Lihat Peta
+                    <button onclick="openRequestModal()" class="btn btn-primary">
+                        <span class="btn-icon">🆘</span>
+                        Request Bantuan
                     </button>
 
                     <div class="secondary-buttons">
@@ -790,6 +865,22 @@
                             <label class="form-label">Ciri-ciri Fisik</label>
                             <textarea name="physicalDescription" class="form-textarea" placeholder="Deskripsi penampilan, pakaian terakhir, tanda khusus, dll"></textarea>
                         </div>
+
+                        <div class="form-group full-width">
+                            <label class="form-label">Foto Orang Hilang (Opsional)</label>
+                            <input type="file" id="photoInput" class="file-input-hidden" accept="image/*" onchange="handlePhotoUpload(event)">
+                            <div class="photo-upload-container" onclick="document.getElementById('photoInput').click()">
+                                <div id="uploadPrompt">
+                                    <div class="upload-icon">📷</div>
+                                    <div class="upload-text">Klik untuk upload foto</div>
+                                    <div class="upload-hint">JPG, PNG, atau JPEG (Max 5MB)</div>
+                                </div>
+                                <div id="photoPreview" class="photo-preview">
+                                    <img id="previewImage" src="" alt="Preview">
+                                    <button type="button" class="remove-photo-btn" onclick="removePhoto(event)">Hapus Foto</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="form-section">
@@ -855,10 +946,138 @@
         </div>
     </div>
 
+    <!-- Modal Request Bantuan -->
+    <div id="requestModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Request Bantuan Darurat</h2>
+                <button class="close-btn" onclick="closeRequestModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="map-container">
+                    <div id="mapRequest"></div>
+                </div>
+
+                <div id="requestAlert" class="alert"></div>
+
+                <form id="requestForm" onsubmit="submitRequest(event)">
+                    <div class="form-section">
+                        <h3 class="form-section-title">Informasi Bantuan</h3>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Jenis Bantuan <span class="required">*</span></label>
+                                <select name="requestType" class="form-select" required>
+                                    <option value="">Pilih jenis bantuan</option>
+                                    <option value="MAKANAN">Makanan & Air Bersih</option>
+                                    <option value="OBAT">Obat-obatan & Alat Kesehatan</option>
+                                    <option value="PAKAIAN">Pakaian & Selimut</option>
+                                    <option value="TENDA">Tenda & Tempat Tinggal</option>
+                                    <option value="EVAKUASI">Evakuasi Darurat</option>
+                                    <option value="MEDIS">Bantuan Medis</option>
+                                    <option value="LOGISTIK">Logistik & Transportasi</option>
+                                    <option value="LAINNYA">Lainnya</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Tingkat Urgensi <span class="required">*</span></label>
+                                <select name="urgency" class="form-select" required>
+                                    <option value="">Pilih tingkat urgensi</option>
+                                    <option value="CRITICAL">Kritis (Segera)</option>
+                                    <option value="HIGH">Tinggi (1-24 jam)</option>
+                                    <option value="MEDIUM">Sedang (1-3 hari)</option>
+                                    <option value="LOW">Rendah (>3 hari)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label class="form-label">Deskripsi Kebutuhan <span class="required">*</span></label>
+                            <textarea name="description" class="form-textarea" placeholder="Jelaskan kebutuhan bantuan secara detail" required></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3 class="form-section-title">Lokasi & Jumlah Orang</h3>
+
+                        <div class="form-group full-width">
+                            <label class="form-label">Lokasi <span class="required">*</span></label>
+                            <input type="text" name="location" class="form-input" placeholder="Alamat lengkap lokasi" required>
+                        </div>
+
+                        <div class="form-row triple">
+                            <div class="form-group">
+                                <label class="form-label">Jumlah Laki-laki</label>
+                                <input type="number" name="maleCount" class="form-input" placeholder="0" min="0" value="0">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Jumlah Perempuan</label>
+                                <input type="number" name="femaleCount" class="form-input" placeholder="0" min="0" value="0">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Jumlah Anak</label>
+                                <input type="number" name="childCount" class="form-input" placeholder="0" min="0" value="0">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Provinsi</label>
+                                <input type="text" name="province" class="form-input" placeholder="Contoh: Aceh">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Kota/Kabupaten</label>
+                                <input type="text" name="city" class="form-input" placeholder="Contoh: Banda Aceh">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Kecamatan</label>
+                                <input type="text" name="district" class="form-input" placeholder="Contoh: Baiturrahman">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Kelurahan/Desa</label>
+                                <input type="text" name="village" class="form-input" placeholder="Contoh: Peunayong">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3 class="form-section-title">Kontak Pelapor</h3>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Nama Pelapor <span class="required">*</span></label>
+                                <input type="text" name="reporterName" class="form-input" placeholder="Nama lengkap" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">No. Telepon <span class="required">*</span></label>
+                                <div class="phone-input-group">
+                                    <input type="text" value="+62" class="form-input country-code" readonly>
+                                    <input type="tel" name="reporterPhone" class="form-input phone-number" placeholder="81343244325" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="submit-btn">Kirim Request Bantuan</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script>
         const API_BASE = window.location.origin;
-        let map, mapMissing;
-        let marker, markerMissing;
+        let map, mapMissing, mapRequest;
+        let marker, markerMissing, markerRequest;
+        let uploadedPhoto = null;
 
         // Slideshow functionality
         let currentSlide = 0;
@@ -911,6 +1130,19 @@
                 title: 'Lokasi Terakhir Terlihat'
             });
 
+            // Map for Request Bantuan
+            mapRequest = new google.maps.Map(document.getElementById('mapRequest'), {
+                center: defaultLocation,
+                zoom: 13
+            });
+
+            markerRequest = new google.maps.Marker({
+                position: defaultLocation,
+                map: mapRequest,
+                draggable: true,
+                title: 'Lokasi Request Bantuan'
+            });
+
             // Auto-detect location
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
@@ -923,6 +1155,8 @@
                         marker.setPosition(pos);
                         mapMissing.setCenter(pos);
                         markerMissing.setPosition(pos);
+                        mapRequest.setCenter(pos);
+                        markerRequest.setPosition(pos);
                     },
                     () => {
                         console.log('Geolocation failed, using default location');
@@ -969,12 +1203,71 @@
             document.getElementById('missingPersonModal').classList.remove('active');
             document.body.style.overflow = 'auto';
             document.getElementById('missingPersonForm').reset();
+            removePhoto();
             hideAlert('missingAlert');
         }
 
-        function openReportModal() {
-            // Redirect to public form for now
-            window.location.href = '/public-form.html';
+        function openRequestModal() {
+            document.getElementById('requestModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => {
+                if (mapRequest) {
+                    google.maps.event.trigger(mapRequest, 'resize');
+                    mapRequest.setCenter(markerRequest.getPosition());
+                } else {
+                    initMap();
+                }
+            }, 100);
+        }
+
+        function closeRequestModal() {
+            document.getElementById('requestModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+            document.getElementById('requestForm').reset();
+            hideAlert('requestAlert');
+        }
+
+        // Photo Upload Functions
+        function handlePhotoUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Check file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('Ukuran file maksimal 5MB');
+                event.target.value = '';
+                return;
+            }
+
+            // Check file type
+            if (!file.type.startsWith('image/')) {
+                alert('File harus berupa gambar (JPG, PNG, JPEG)');
+                event.target.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                uploadedPhoto = e.target.result;
+                document.getElementById('previewImage').src = e.target.result;
+                document.getElementById('uploadPrompt').style.display = 'none';
+                document.getElementById('photoPreview').classList.add('show');
+                document.querySelector('.photo-upload-container').classList.add('has-image');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removePhoto(event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            uploadedPhoto = null;
+            document.getElementById('photoInput').value = '';
+            document.getElementById('previewImage').src = '';
+            document.getElementById('uploadPrompt').style.display = 'block';
+            document.getElementById('photoPreview').classList.remove('show');
+            document.querySelector('.photo-upload-container').classList.remove('has-image');
         }
 
         // Alert Functions
@@ -1092,7 +1385,8 @@
                     village: formData.get('village'),
                     homeAddress: formData.get('homeAddress'),
                     familyContact: formData.get('familyName'),
-                    familyPhone: '+62' + formData.get('familyPhone')
+                    familyPhone: '+62' + formData.get('familyPhone'),
+                    photo: uploadedPhoto // Include photo if uploaded
                 }
             };
 
@@ -1125,6 +1419,77 @@
             }
         }
 
+        // Submit Request Bantuan
+        async function submitRequest(event) {
+            event.preventDefault();
+            const form = event.target;
+            const submitBtn = form.querySelector('.submit-btn');
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Mengirim...';
+
+            const formData = new FormData(form);
+            const position = markerRequest.getPosition();
+
+            const data = {
+                type: 'BANTUAN',
+                urgency: formData.get('urgency'),
+                reportSource: 'web',
+                reporterPhone: '+62' + formData.get('reporterPhone'),
+                location: formData.get('location'),
+                latitude: position.lat(),
+                longitude: position.lng(),
+                rawMessage: `${formData.get('requestType')}: ${formData.get('description')}`,
+                summary: formData.get('description').substring(0, 100),
+                assistance: {
+                    type: formData.get('requestType'),
+                    description: formData.get('description'),
+                    urgency: formData.get('urgency'),
+                    location: formData.get('location'),
+                    province: formData.get('province'),
+                    city: formData.get('city'),
+                    district: formData.get('district'),
+                    village: formData.get('village'),
+                    peopleCount: parseInt(formData.get('maleCount') || 0) +
+                                parseInt(formData.get('femaleCount') || 0) +
+                                parseInt(formData.get('childCount') || 0),
+                    maleCount: parseInt(formData.get('maleCount') || 0),
+                    femaleCount: parseInt(formData.get('femaleCount') || 0),
+                    childCount: parseInt(formData.get('childCount') || 0),
+                    reporterName: formData.get('reporterName'),
+                    reporterPhone: '+62' + formData.get('reporterPhone')
+                }
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/api/reports`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showAlert('requestAlert', 'Request bantuan berhasil dikirim! Tim kami akan segera merespons.', 'success');
+                    form.reset();
+                    setTimeout(() => {
+                        closeRequestModal();
+                    }, 2000);
+                } else {
+                    showAlert('requestAlert', result.error || 'Gagal mengirim request. Silakan coba lagi.', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('requestAlert', 'Terjadi kesalahan. Silakan coba lagi.', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Kirim Request Bantuan';
+            }
+        }
+
         // Close modal when clicking outside
         window.onclick = function(event) {
             if (event.target.classList.contains('modal')) {
@@ -1132,6 +1497,8 @@
                     closeShelterModal();
                 } else if (event.target.id === 'missingPersonModal') {
                     closeMissingPersonModal();
+                } else if (event.target.id === 'requestModal') {
+                    closeRequestModal();
                 }
             }
         }
