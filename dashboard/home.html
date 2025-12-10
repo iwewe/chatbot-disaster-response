@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pantau Bencana - Emergency Response System</title>
+    <meta name="description" content="Pemantauan bencana dan koordinasi tanggap darurat. Lapor darurat, pantau logistik, dan koordinasi relawan.">
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBDaeWicvigtP9xPv919E-RNoxfvC-Hqik&libraries=places"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Hero Section with Background Slideshow */
+        .hero-section {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background: #0f172a;
+        }
+
+        /* Background Slideshow */
+        .slideshow-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+
+        .slide.active {
+            opacity: 1;
+        }
+
+        .slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .slide-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+        }
+
+        /* Backdrop Blur Overlay */
+        .backdrop-blur-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(2px);
+            z-index: 1;
+        }
+
+        /* Content */
+        .hero-content {
+            position: relative;
+            z-index: 10;
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 60px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 60px;
+        }
+
+        @media (min-width: 1024px) {
+            .hero-content {
+                flex-direction: row;
+                justify-content: space-between;
+            }
+        }
+
+        .hero-text {
+            flex: 1;
+            text-align: center;
+            color: white;
+        }
+
+        @media (min-width: 640px) {
+            .hero-text {
+                text-align: left;
+            }
+        }
+
+        .hero-text h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 24px;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        @media (min-width: 640px) {
+            .hero-text h1 {
+                font-size: 3.75rem;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .hero-text h1 {
+                font-size: 4.5rem;
+            }
+        }
+
+        .hero-text p {
+            font-size: 1rem;
+            line-height: 1.7;
+            color: #e5e7eb;
+            margin-bottom: 32px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            max-width: 600px;
+        }
+
+        @media (min-width: 640px) {
+            .hero-text p {
+                font-size: 1.25rem;
+            }
+        }
+
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            align-items: center;
+        }
+
+        @media (min-width: 640px) {
+            .button-group {
+                flex-direction: row;
+                align-items: flex-start;
+            }
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 18px 32px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            min-width: 240px;
+            cursor: pointer;
+            border: none;
+        }
+
+        @media (min-width: 640px) {
+            .btn {
+                min-width: auto;
+            }
+        }
+
+        .btn-primary {
+            background: white;
+            color: #1f2937;
+        }
+
+        .btn-primary:hover {
+            background: #f3f4f6;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #b91c1c;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4);
+        }
+
+        .btn-icon {
+            font-size: 20px;
+        }
+
+        .secondary-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        @media (min-width: 640px) {
+            .secondary-buttons {
+                flex-direction: row;
+            }
+        }
+
+        /* Contact Card */
+        .contact-card {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 32px;
+            max-width: 450px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .contact-card h3 {
+            color: white;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .contact-icon {
+            color: #10b981;
+            font-size: 20px;
+        }
+
+        .contact-info {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .contact-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .contact-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: all 0.3s;
+            font-size: 24px;
+        }
+
+        .contact-btn.whatsapp {
+            background: #10b981;
+            color: white;
+        }
+
+        .contact-btn.whatsapp:hover {
+            background: #059669;
+            transform: scale(1.1);
+        }
+
+        .contact-btn.telegram {
+            background: #0088cc;
+            color: white;
+        }
+
+        .contact-btn.telegram:hover {
+            background: #006699;
+            transform: scale(1.1);
+        }
+
+        .divider {
+            margin: 20px 0;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 14px;
+        }
+
+        .admin-link {
+            text-align: center;
+        }
+
+        .admin-link a {
+            color: #a855f7;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .admin-link a:hover {
+            color: #9333ea;
+            text-decoration: underline;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            max-width: 900px;
+            width: 95%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-header {
+            padding: 24px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 10;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .close-btn {
+            background: #f3f4f6;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 20px;
+            color: #6b7280;
+        }
+
+        .close-btn:hover {
+            background: #e5e7eb;
+            color: #1f2937;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        /* Map Container */
+        .map-container {
+            width: 100%;
+            height: 350px;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 24px;
+            border: 1px solid #e5e7eb;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Form Styles */
+        .form-section {
+            margin-bottom: 24px;
+        }
+
+        .form-section-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        @media (min-width: 768px) {
+            .form-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .form-row.triple {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 6px;
+        }
+
+        .form-label .required {
+            color: #dc2626;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .phone-input-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .country-code {
+            width: 80px;
+            flex-shrink: 0;
+        }
+
+        .phone-number {
+            flex: 1;
+        }
+
+        /* Submit Button */
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 24px;
+        }
+
+        .submit-btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .submit-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Alert */
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #6ee7b7;
+        }
+
+        .alert.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        /* Loading animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.7s ease-out forwards;
+        }
+
+        .delay-200 {
+            animation-delay: 0.2s;
+            opacity: 0;
+        }
+
+        .delay-300 {
+            animation-delay: 0.3s;
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="hero-section">
+        <!-- Background Slideshow -->
+        <div class="slideshow-container">
+            <div class="slide active">
+                <img src="https://images.unsplash.com/photo-1547683905-f686c993aae5?w=1920" alt="Emergency Response">
+                <div class="slide-overlay"></div>
+            </div>
+            <div class="slide">
+                <img src="https://images.unsplash.com/photo-1504813184591-01572f98c85f?w=1920" alt="Disaster Response">
+                <div class="slide-overlay"></div>
+            </div>
+            <div class="slide">
+                <img src="https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=1920" alt="Emergency Services">
+                <div class="slide-overlay"></div>
+            </div>
+            <div class="slide">
+                <img src="https://images.unsplash.com/photo-1534629938736-b1b076b9c2c6?w=1920" alt="Relief Efforts">
+                <div class="slide-overlay"></div>
+            </div>
+        </div>
+
+        <!-- Backdrop Blur Overlay -->
+        <div class="backdrop-blur-overlay"></div>
+
+        <!-- Hero Content -->
+        <div class="hero-content">
+            <!-- Text Section -->
+            <div class="hero-text animate-fade-in">
+                <h1>Pantau Penanganan Bencana</h1>
+                <p>
+                    Laman Data di Peta kolaborasi warga untuk Penanganan Bencana dan Pencarian Keluarga Bencana Banjir di Sumatera.
+                    Pusat informasi berbasis kolaborasi, berpartisipasi dengan menambahkan titik pengungsi dan pelaporan orang hilang.
+                </p>
+
+                <div class="button-group">
+                    <button onclick="openReportModal()" class="btn btn-primary">
+                        <span class="btn-icon">🗺️</span>
+                        Lihat Peta
+                    </button>
+
+                    <div class="secondary-buttons">
+                        <button onclick="openShelterModal()" class="btn btn-danger">
+                            <span class="btn-icon">➕</span>
+                            Titik Pengungsian
+                        </button>
+                        <button onclick="openMissingPersonModal()" class="btn btn-danger">
+                            <span class="btn-icon">➕</span>
+                            Orang Hilang
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Card -->
+            <div class="contact-card animate-fade-in delay-300">
+                <h3>
+                    <span class="contact-icon">📞</span>
+                    Hubungi Kami
+                </h3>
+
+                <div class="contact-info">
+                    <div class="contact-buttons">
+                        <a href="https://wa.me/6285124323212" target="_blank" class="contact-btn whatsapp" title="WhatsApp">
+                            <span>💬</span>
+                        </a>
+                        <a href="https://t.me/emergencyresponse" target="_blank" class="contact-btn telegram" title="Telegram">
+                            <span>✈️</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="divider">atau</div>
+
+                <div class="admin-link">
+                    <a href="/index.html">Login untuk Admin →</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Titik Pengungsian -->
+    <div id="shelterModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Titik Pengungsian</h2>
+                <button class="close-btn" onclick="closeShelterModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="map-container">
+                    <div id="map"></div>
+                </div>
+
+                <div id="shelterAlert" class="alert"></div>
+
+                <form id="shelterForm" onsubmit="submitShelter(event)">
+                    <div class="form-section">
+                        <h3 class="form-section-title">Data PIC Titik Pengungsian</h3>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Nama <span class="required">*</span></label>
+                                <input type="text" name="picName" class="form-input" placeholder="Masukkan nama penanggung jawab" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">No. WhatsApp <span class="required">*</span></label>
+                                <div class="phone-input-group">
+                                    <input type="text" value="+62" class="form-input country-code" readonly>
+                                    <input type="tel" name="picPhone" class="form-input phone-number" placeholder="81343244325" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Jenis Titik Pengungsian <span class="required">*</span></label>
+                                <select name="shelterType" class="form-select" required>
+                                    <option value="">Pilih jenis titik pengungsian</option>
+                                    <option value="Gedung Sekolah">Gedung Sekolah</option>
+                                    <option value="Balai Desa">Balai Desa</option>
+                                    <option value="Masjid">Masjid</option>
+                                    <option value="Gereja">Gereja</option>
+                                    <option value="Gedung Pemerintah">Gedung Pemerintah</option>
+                                    <option value="Tenda Darurat">Tenda Darurat</option>
+                                    <option value="Lainnya">Lainnya</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Nama Lokasi</label>
+                                <input type="text" name="locationName" class="form-input" placeholder="Contoh: SDN 01 Jakarta">
+                            </div>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label class="form-label">Alamat Lengkap <span class="required">*</span></label>
+                            <textarea name="address" class="form-textarea" placeholder="Masukkan alamat lengkap titik pengungsian" required></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3 class="form-section-title">Jumlah & Asal Pengungsi</h3>
+
+                        <div class="form-row triple">
+                            <div class="form-group">
+                                <label class="form-label">Laki-laki <span class="required">*</span></label>
+                                <input type="number" name="malCount" class="form-input" placeholder="0" min="0" value="0" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Perempuan <span class="required">*</span></label>
+                                <input type="number" name="femaleCount" class="form-input" placeholder="0" min="0" value="0" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Anak <span class="required">*</span></label>
+                                <input type="number" name="childCount" class="form-input" placeholder="0" min="0" value="0" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label class="form-label">Asal Pengungsi</label>
+                            <input type="text" name="refugeeOrigin" class="form-input" placeholder="Contoh: Desa Sukamaju, Kecamatan Cimanggis">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="submit-btn">Kirim Data Pengungsian</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Orang Hilang -->
+    <div id="missingPersonModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Laporan Orang Hilang</h2>
+                <button class="close-btn" onclick="closeMissingPersonModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="map-container">
+                    <div id="mapMissing"></div>
+                </div>
+
+                <div id="missingAlert" class="alert"></div>
+
+                <form id="missingPersonForm" onsubmit="submitMissingPerson(event)">
+                    <div class="form-section">
+                        <h3 class="form-section-title">Data Orang Hilang</h3>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Nama Lengkap <span class="required">*</span></label>
+                                <input type="text" name="personName" class="form-input" placeholder="Nama orang yang hilang" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Umur <span class="required">*</span></label>
+                                <input type="number" name="age" class="form-input" placeholder="0" min="0" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Jenis Kelamin <span class="required">*</span></label>
+                                <select name="gender" class="form-select" required>
+                                    <option value="">Pilih jenis kelamin</option>
+                                    <option value="LAKI_LAKI">Laki-laki</option>
+                                    <option value="PEREMPUAN">Perempuan</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">No. KTP/NIK</label>
+                                <input type="text" name="idNumber" class="form-input" placeholder="3201234567890123">
+                            </div>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label class="form-label">Ciri-ciri Fisik</label>
+                            <textarea name="physicalDescription" class="form-textarea" placeholder="Deskripsi penampilan, pakaian terakhir, tanda khusus, dll"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3 class="form-section-title">Lokasi Terakhir Terlihat</h3>
+
+                        <div class="form-group full-width">
+                            <label class="form-label">Lokasi <span class="required">*</span></label>
+                            <input type="text" name="lastSeenLocation" class="form-input" placeholder="Contoh: Jl. Sudirman No. 10, Jakarta" required>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Provinsi</label>
+                                <input type="text" name="province" class="form-input" placeholder="Contoh: DKI Jakarta">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Kota/Kabupaten</label>
+                                <input type="text" name="city" class="form-input" placeholder="Contoh: Jakarta Selatan">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Kecamatan</label>
+                                <input type="text" name="district" class="form-input" placeholder="Contoh: Kebayoran Baru">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Kelurahan/Desa</label>
+                                <input type="text" name="village" class="form-input" placeholder="Contoh: Melawai">
+                            </div>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label class="form-label">Alamat Rumah</label>
+                            <textarea name="homeAddress" class="form-textarea" placeholder="Alamat lengkap tempat tinggal"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3 class="form-section-title">Kontak Keluarga</h3>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Nama Keluarga <span class="required">*</span></label>
+                                <input type="text" name="familyName" class="form-input" placeholder="Nama pelapor/keluarga" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">No. Telepon <span class="required">*</span></label>
+                                <div class="phone-input-group">
+                                    <input type="text" value="+62" class="form-input country-code" readonly>
+                                    <input type="tel" name="familyPhone" class="form-input phone-number" placeholder="81343244325" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="submit-btn">Kirim Laporan Orang Hilang</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let map, mapMissing;
+        let marker, markerMissing;
+
+        // Slideshow functionality
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+
+        function showSlide(index) {
+            slides.forEach((slide, i) => {
+                slide.classList.remove('active');
+                if (i === index) {
+                    slide.classList.add('active');
+                }
+            });
+        }
+
+        function nextSlide() {
+            currentSlide = (currentSlide + 1) % slides.length;
+            showSlide(currentSlide);
+        }
+
+        setInterval(nextSlide, 5000);
+        showSlide(0);
+
+        // Initialize Maps
+        function initMap() {
+            // Map for Shelter
+            const defaultLocation = { lat: -6.2088, lng: 106.8456 }; // Jakarta
+
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: defaultLocation,
+                zoom: 13
+            });
+
+            marker = new google.maps.Marker({
+                position: defaultLocation,
+                map: map,
+                draggable: true,
+                title: 'Lokasi Pengungsian'
+            });
+
+            // Map for Missing Person
+            mapMissing = new google.maps.Map(document.getElementById('mapMissing'), {
+                center: defaultLocation,
+                zoom: 13
+            });
+
+            markerMissing = new google.maps.Marker({
+                position: defaultLocation,
+                map: mapMissing,
+                draggable: true,
+                title: 'Lokasi Terakhir Terlihat'
+            });
+
+            // Auto-detect location
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const pos = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        };
+                        map.setCenter(pos);
+                        marker.setPosition(pos);
+                        mapMissing.setCenter(pos);
+                        markerMissing.setPosition(pos);
+                    },
+                    () => {
+                        console.log('Geolocation failed, using default location');
+                    }
+                );
+            }
+        }
+
+        // Modal Functions
+        function openShelterModal() {
+            document.getElementById('shelterModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => {
+                if (map) {
+                    google.maps.event.trigger(map, 'resize');
+                    map.setCenter(marker.getPosition());
+                } else {
+                    initMap();
+                }
+            }, 100);
+        }
+
+        function closeShelterModal() {
+            document.getElementById('shelterModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+            document.getElementById('shelterForm').reset();
+            hideAlert('shelterAlert');
+        }
+
+        function openMissingPersonModal() {
+            document.getElementById('missingPersonModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => {
+                if (mapMissing) {
+                    google.maps.event.trigger(mapMissing, 'resize');
+                    mapMissing.setCenter(markerMissing.getPosition());
+                } else {
+                    initMap();
+                }
+            }, 100);
+        }
+
+        function closeMissingPersonModal() {
+            document.getElementById('missingPersonModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+            document.getElementById('missingPersonForm').reset();
+            hideAlert('missingAlert');
+        }
+
+        function openReportModal() {
+            // Redirect to public form for now
+            window.location.href = '/public-form.html';
+        }
+
+        // Alert Functions
+        function showAlert(elementId, message, type) {
+            const alert = document.getElementById(elementId);
+            alert.textContent = message;
+            alert.className = `alert ${type} show`;
+        }
+
+        function hideAlert(elementId) {
+            const alert = document.getElementById(elementId);
+            alert.className = 'alert';
+        }
+
+        // Submit Shelter
+        async function submitShelter(event) {
+            event.preventDefault();
+            const form = event.target;
+            const submitBtn = form.querySelector('.submit-btn');
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Mengirim...';
+
+            const formData = new FormData(form);
+            const position = marker.getPosition();
+
+            const data = {
+                type: 'PENGUNGSIAN',
+                urgency: 'MEDIUM',
+                reportSource: 'web',
+                reporterPhone: '+62' + formData.get('picPhone'),
+                location: formData.get('address'),
+                latitude: position.lat(),
+                longitude: position.lng(),
+                shelter: {
+                    name: formData.get('locationName') || formData.get('shelterType'),
+                    type: formData.get('shelterType'),
+                    address: formData.get('address'),
+                    picName: formData.get('picName'),
+                    picPhone: '+62' + formData.get('picPhone'),
+                    capacity: parseInt(formData.get('maleCount') || 0) +
+                             parseInt(formData.get('femaleCount') || 0) +
+                             parseInt(formData.get('childCount') || 0),
+                    currentOccupancy: parseInt(formData.get('maleCount') || 0) +
+                                     parseInt(formData.get('femaleCount') || 0) +
+                                     parseInt(formData.get('childCount') || 0),
+                    maleCount: parseInt(formData.get('maleCount') || 0),
+                    femaleCount: parseInt(formData.get('femaleCount') || 0),
+                    childCount: parseInt(formData.get('childCount') || 0),
+                    refugeeOrigin: formData.get('refugeeOrigin')
+                }
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/api/reports`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showAlert('shelterAlert', 'Data titik pengungsian berhasil dikirim!', 'success');
+                    form.reset();
+                    setTimeout(() => {
+                        closeShelterModal();
+                    }, 2000);
+                } else {
+                    showAlert('shelterAlert', result.error || 'Gagal mengirim data. Silakan coba lagi.', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('shelterAlert', 'Terjadi kesalahan. Silakan coba lagi.', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Kirim Data Pengungsian';
+            }
+        }
+
+        // Submit Missing Person
+        async function submitMissingPerson(event) {
+            event.preventDefault();
+            const form = event.target;
+            const submitBtn = form.querySelector('.submit-btn');
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Mengirim...';
+
+            const formData = new FormData(form);
+            const position = markerMissing.getPosition();
+
+            const data = {
+                type: 'KORBAN',
+                urgency: 'HIGH',
+                status: 'HILANG',
+                reportSource: 'web',
+                reporterPhone: '+62' + formData.get('familyPhone'),
+                location: formData.get('lastSeenLocation'),
+                latitude: position.lat(),
+                longitude: position.lng(),
+                person: {
+                    name: formData.get('personName'),
+                    gender: formData.get('gender'),
+                    age: parseInt(formData.get('age')),
+                    idNumber: formData.get('idNumber'),
+                    status: 'HILANG',
+                    condition: formData.get('physicalDescription'),
+                    lastSeenLocation: formData.get('lastSeenLocation'),
+                    province: formData.get('province'),
+                    city: formData.get('city'),
+                    district: formData.get('district'),
+                    village: formData.get('village'),
+                    homeAddress: formData.get('homeAddress'),
+                    familyContact: formData.get('familyName'),
+                    familyPhone: '+62' + formData.get('familyPhone')
+                }
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/api/reports`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showAlert('missingAlert', 'Laporan orang hilang berhasil dikirim!', 'success');
+                    form.reset();
+                    setTimeout(() => {
+                        closeMissingPersonModal();
+                    }, 2000);
+                } else {
+                    showAlert('missingAlert', result.error || 'Gagal mengirim laporan. Silakan coba lagi.', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('missingAlert', 'Terjadi kesalahan. Silakan coba lagi.', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Kirim Laporan Orang Hilang';
+            }
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                if (event.target.id === 'shelterModal') {
+                    closeShelterModal();
+                } else if (event.target.id === 'missingPersonModal') {
+                    closeMissingPersonModal();
+                }
+            }
+        }
+
+        // Initialize map when page loads
+        window.onload = function() {
+            initMap();
+        }
+    </script>
+</body>
+</html>
