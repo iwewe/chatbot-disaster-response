@@ -1425,28 +1425,26 @@
             const data = {
                 type: 'KORBAN',
                 urgency: 'HIGH',
-                status: 'HILANG',
                 reportSource: 'web',
                 reporterPhone: '+62' + formData.get('familyPhone'),
                 location: formData.get('lastSeenLocation'),
                 latitude: null,
                 longitude: null,
-                person: {
-                    name: formData.get('personName'),
+                missingPerson: {
+                    personName: formData.get('personName'),
                     gender: formData.get('gender'),
                     age: parseInt(formData.get('age')),
                     idNumber: formData.get('idNumber'),
-                    status: 'HILANG',
-                    condition: formData.get('physicalDescription'),
+                    physicalDescription: formData.get('physicalDescription'),
                     lastSeenLocation: formData.get('lastSeenLocation'),
                     province: formData.get('province'),
                     city: formData.get('city'),
                     district: formData.get('district'),
                     village: formData.get('village'),
                     homeAddress: formData.get('homeAddress'),
-                    familyContact: formData.get('familyName'),
+                    familyName: formData.get('familyName'),
                     familyPhone: '+62' + formData.get('familyPhone'),
-                    photo: uploadedPhoto
+                    photoBase64: uploadedPhoto
                 }
             };
 
@@ -1490,27 +1488,25 @@
             const position = mapRequest.marker.getLatLng();
 
             const data = {
-                type: 'BANTUAN',
+                type: 'KEBUTUHAN',
                 urgency: formData.get('urgency'),
                 reportSource: 'web',
                 reporterPhone: '+62' + formData.get('reporterPhone'),
                 location: formData.get('location'),
                 latitude: position.lat,
                 longitude: position.lng,
-                rawMessage: `${formData.get('requestType')}: ${formData.get('description')}`,
-                summary: formData.get('description').substring(0, 100),
-                assistance: {
-                    type: formData.get('requestType'),
+                needs: {
+                    category: formData.get('requestType'),
                     description: formData.get('description'),
-                    urgency: formData.get('urgency'),
+                    quantity: `${parseInt(formData.get('maleCount') || 0) + parseInt(formData.get('femaleCount') || 0) + parseInt(formData.get('childCount') || 0)} orang`,
+                    peopleAffected: parseInt(formData.get('maleCount') || 0) +
+                                   parseInt(formData.get('femaleCount') || 0) +
+                                   parseInt(formData.get('childCount') || 0),
                     location: formData.get('location'),
                     province: formData.get('province'),
                     city: formData.get('city'),
                     district: formData.get('district'),
                     village: formData.get('village'),
-                    peopleCount: parseInt(formData.get('maleCount') || 0) +
-                                parseInt(formData.get('femaleCount') || 0) +
-                                parseInt(formData.get('childCount') || 0),
                     maleCount: parseInt(formData.get('maleCount') || 0),
                     femaleCount: parseInt(formData.get('femaleCount') || 0),
                     childCount: parseInt(formData.get('childCount') || 0),

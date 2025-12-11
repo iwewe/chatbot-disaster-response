@@ -30,6 +30,7 @@ router.get('/health', apiController.healthCheck);
 // ============================================
 
 // Reports
+router.post('/api/reports', apiController.createReport); // Public endpoint for web forms
 router.get('/api/reports', authenticate, apiController.getReports);
 router.get('/api/reports/:id', authenticate, apiController.getReportById);
 router.patch(

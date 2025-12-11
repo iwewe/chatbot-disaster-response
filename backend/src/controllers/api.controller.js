@@ -205,6 +205,177 @@ export async function updateReportStatus(req, res) {
 }
 
 /**
+ * Create new report from web form (public endpoint)
+ */
+export async function createReport(req, res) {
+  try {
+    const { type, urgency, reportSource, reporterPhone, location, latitude, longitude, shelter, missingPerson, needs } = req.body;
+
+    // Validate required fields
+    if (!type || !reporterPhone || !location) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: type, reporterPhone, location'
+      });
+    }
+
+    // Find or create user (reporter)
+    let user = await prisma.user.findUnique({
+      where: { phoneNumber: reporterPhone },
+    });
+
+    if (!user) {
+      // Create new user for web reporter
+      user = await prisma.user.create({
+        data: {
+          phoneNumber: reporterPhone,
+          name: shelter?.picName || missingPerson?.familyName || 'Web Reporter',
+          role: 'VOLUNTEER',
+          trustLevel: 0,
+        },
+      });
+      logger.info('Created new user from web form', { phoneNumber: reporterPhone });
+    }
+
+    // Generate report number
+    const reportNumber = await generateReportNumber(type, user.role === 'ADMIN');
+
+    // Build summary based on report type
+    let summary = '';
+    let extractedData = {};
+
+    if (type === 'PENGUNGSIAN' && shelter) {
+      const totalPeople = (shelter.maleCount || 0) + (shelter.femaleCount || 0) + (shelter.childCount || 0);
+      summary = `Posko Pengungsian ${shelter.type} - ${totalPeople} orang mengungsi`;
+      extractedData = { shelter };
+    } else if (type === 'KORBAN' && missingPerson) {
+      summary = `Pencarian orang hilang: ${missingPerson.personName}, ${missingPerson.age} tahun`;
+      extractedData = { missingPerson };
+    } else if (type === 'KEBUTUHAN' && needs) {
+      summary = `Request bantuan ${needs.category || 'umum'}`;
+      extractedData = { needs };
+    }
+
+    // Create report
+    const report = await prisma.report.create({
+      data: {
+        reportNumber,
+        type,
+        status: 'PENDING_VERIFICATION',
+        urgency: urgency || 'MEDIUM',
+        reporterId: user.id,
+        reporterPhone: user.phoneNumber,
+        reportSource: reportSource || 'web',
+        location,
+        latitude: latitude ? parseFloat(latitude) : null,
+        longitude: longitude ? parseFloat(longitude) : null,
+        summary,
+        rawMessage: JSON.stringify(req.body),
+        extractedData,
+      },
+      include: {
+        reporter: true,
+      },
+    });
+
+    // Create person record if missing person report
+    if (type === 'KORBAN' && missingPerson) {
+      await prisma.reportPerson.create({
+        data: {
+          reportId: report.id,
+          name: missingPerson.personName,
+          nik: missingPerson.idNumber || null,
+          gender: missingPerson.gender || null,
+          age: missingPerson.age ? parseInt(missingPerson.age) : null,
+          status: 'HILANG',
+          condition: missingPerson.physicalDescription || null,
+          lastSeenLocation: missingPerson.lastSeenLocation || null,
+          familyContact: missingPerson.familyName || null,
+          familyPhone: missingPerson.familyPhone || null,
+          photoUrl: missingPerson.photoBase64 ? 'base64-stored' : null,
+          notes: `Provinsi: ${missingPerson.province || '-'}, Kota: ${missingPerson.city || '-'}, Kecamatan: ${missingPerson.district || '-'}`,
+        },
+      });
+
+      // TODO: Handle photo upload if missingPerson.photoBase64 exists
+      if (missingPerson.photoBase64) {
+        logger.info('Photo upload for missing person', { reportId: report.id });
+        // Future: Save base64 photo to media storage
+      }
+    }
+
+    // Create need records if kebutuhan report
+    if (type === 'KEBUTUHAN' && needs) {
+      await prisma.reportNeed.create({
+        data: {
+          reportId: report.id,
+          category: needs.category || 'LOGISTIK_LAIN',
+          description: needs.description || summary,
+          quantity: needs.quantity || null,
+          peopleAffected: needs.peopleAffected ? parseInt(needs.peopleAffected) : null,
+          status: 'BELUM_TERPENUHI',
+        },
+      });
+    }
+
+    // Create audit log
+    await prisma.auditLog.create({
+      data: {
+        userId: user.id,
+        action: 'CREATE',
+        entityType: 'Report',
+        entityId: report.id,
+        reportId: report.id,
+        metadata: {
+          source: reportSource || 'web',
+          formType: type,
+        },
+      },
+    });
+
+    logger.info('Report created from web form', {
+      reportId: report.id,
+      reportNumber: report.reportNumber,
+      type,
+      userId: user.id
+    });
+
+    res.status(201).json({
+      success: true,
+      data: report,
+      message: 'Laporan berhasil dikirim. Terima kasih!'
+    });
+  } catch (error) {
+    logger.error('Failed to create report', { error: error.message, stack: error.stack });
+    res.status(500).json({ success: false, error: 'Gagal membuat laporan. Silakan coba lagi.' });
+  }
+}
+
+/**
+ * Generate report number helper
+ */
+async function generateReportNumber(type, isVerified) {
+  const prefix = isVerified ? 'VR' : 'PB';
+  const typePrefix = type === 'KORBAN' ? 'K' : type === 'KEBUTUHAN' ? 'N' : 'P';
+
+  // Get count of reports today
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const count = await prisma.report.count({
+    where: {
+      type,
+      createdAt: { gte: today },
+    },
+  });
+
+  const sequence = (count + 1).toString().padStart(3, '0');
+  const dateStr = today.toISOString().slice(5, 10).replace('-', '');
+
+  return `${prefix}-${typePrefix}${dateStr}-${sequence}`;
+}
+
+/**
  * Get dashboard statistics
  */
 export async function getDashboardStats(req, res) {
