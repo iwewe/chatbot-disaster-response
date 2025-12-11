@@ -54,6 +54,7 @@ FILES=(
     "create-report.html"
     "public-form.html"
     "nginx.conf"
+    "logo-cri.png"
 )
 
 log "Downloading dashboard files from GitHub..."
