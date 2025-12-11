@@ -696,6 +696,34 @@
             font-family: monospace;
         }
 
+        /* Footer */
+        .footer {
+            position: relative;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 24px 20px;
+            text-align: center;
+        }
+
+        .footer-logo {
+            max-width: 200px;
+            height: auto;
+            opacity: 0.9;
+            transition: opacity 0.3s ease;
+        }
+
+        .footer-logo:hover {
+            opacity: 1;
+        }
+
+        .footer-text {
+            margin-top: 12px;
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
         /* Loading animation */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
@@ -793,6 +821,12 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <img src="https://www.combineindonesia.id/wp-content/uploads/2023/02/logo-Combine-Resource-Institution-300x106-1.png" alt="Combine Resource Institution" class="footer-logo">
+        <p class="footer-text">Powered by Combine Resource Institution</p>
     </div>
 
     <!-- Modal Titik Pengungsian -->
