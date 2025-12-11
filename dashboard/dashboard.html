@@ -777,6 +777,180 @@
     </div>
 
     <!-- Modals for Kontribusi Data -->
+    <!-- Modal Posko Pengungsian -->
+    <div id="shelterModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">🏕️ Posko Pengungsian</h2>
+                <button class="close-btn" onclick="closeFormModal('shelter')">&times;</button>
+            </div>
+            <div class="modal-body">
+<!-- Shelter form not found -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Pencarian Orang -->
+    <div id="missingPersonModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">🔍 Pencarian Orang</h2>
+                <button class="close-btn" onclick="closeFormModal('missing')">&times;</button>
+            </div>
+            <div class="modal-body">
+<!-- Missing form not found -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Request Bantuan -->
+    <div id="requestModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">🆘 Request Bantuan</h2>
+                <button class="close-btn" onclick="closeFormModal('request')">&times;</button>
+            </div>
+            <div class="modal-body">
+<div id="requestContent" class="form-content">
+                <div class="map-controls">
+                    <button type="button" class="btn-location" onclick="useMyLocation('request')">
+                        📍 Gunakan Lokasi Saya
+                    </button>
+                </div>
+
+                <div class="map-container">
+                    <div id="mapRequest"></div>
+                </div>
+
+                <div class="coordinates-display">
+                    <div class="coordinate-input">
+                        <span class="coordinate-label">Latitude</span>
+                        <div class="coordinate-value" id="requestLat">-6.2088</div>
+                    </div>
+                    <div class="coordinate-input">
+                        <span class="coordinate-label">Longitude</span>
+                        <div class="coordinate-value" id="requestLng">106.8456</div>
+                    </div>
+                </div>
+
+                <div id="requestAlert" class="alert"></div>
+
+                <form id="requestForm" onsubmit="submitRequest(event)">
+                    <div class="form-section">
+                        <h3 class="form-section-title">Informasi Bantuan</h3>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Jenis Bantuan <span class="required">*</span></label>
+                                <select name="requestType" class="form-select" required>
+                                    <option value="">Pilih jenis bantuan</option>
+                                    <option value="MAKANAN">Makanan & Air Bersih</option>
+                                    <option value="OBAT">Obat-obatan & Alat Kesehatan</option>
+                                    <option value="PAKAIAN">Pakaian & Selimut</option>
+                                    <option value="TENDA">Tenda & Tempat Tinggal</option>
+                                    <option value="EVAKUASI">Evakuasi Darurat</option>
+                                    <option value="MEDIS">Bantuan Medis</option>
+                                    <option value="LOGISTIK">Logistik & Transportasi</option>
+                                    <option value="LAINNYA">Lainnya</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Tingkat Urgensi <span class="required">*</span></label>
+                                <select name="urgency" class="form-select" required>
+                                    <option value="">Pilih tingkat urgensi</option>
+                                    <option value="CRITICAL">Kritis (Segera)</option>
+                                    <option value="HIGH">Tinggi (1-24 jam)</option>
+                                    <option value="MEDIUM">Sedang (1-3 hari)</option>
+                                    <option value="LOW">Rendah (>3 hari)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label class="form-label">Deskripsi Kebutuhan <span class="required">*</span></label>
+                            <textarea name="description" class="form-textarea" placeholder="Jelaskan kebutuhan bantuan secara detail" required></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3 class="form-section-title">Lokasi & Jumlah Orang</h3>
+
+                        <div class="form-group full-width">
+                            <label class="form-label">Lokasi <span class="required">*</span></label>
+                            <input type="text" name="location" class="form-input" placeholder="Alamat lengkap lokasi" required>
+                        </div>
+
+                        <div class="form-row triple">
+                            <div class="form-group">
+                                <label class="form-label">Jumlah Laki-laki</label>
+                                <input type="number" name="maleCount" class="form-input" placeholder="0" min="0" value="0">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Jumlah Perempuan</label>
+                                <input type="number" name="femaleCount" class="form-input" placeholder="0" min="0" value="0">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Jumlah Anak</label>
+                                <input type="number" name="childCount" class="form-input" placeholder="0" min="0" value="0">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Provinsi</label>
+                                <input type="text" name="province" class="form-input" placeholder="Contoh: Aceh">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Kota/Kabupaten</label>
+                                <input type="text" name="city" class="form-input" placeholder="Contoh: Banda Aceh">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Kecamatan</label>
+                                <input type="text" name="district" class="form-input" placeholder="Contoh: Baiturrahman">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Kelurahan/Desa</label>
+                                <input type="text" name="village" class="form-input" placeholder="Contoh: Peunayong">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3 class="form-section-title">Kontak Pelapor</h3>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Nama Pelapor <span class="required">*</span></label>
+                                <input type="text" name="reporterName" class="form-input" placeholder="Nama lengkap" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">No. Telepon <span class="required">*</span></label>
+                                <div class="phone-input-group">
+                                    <input type="text" value="+62" class="form-input country-code" readonly>
+                                    <input type="tel" name="reporterPhone" class="form-input phone-number" placeholder="81343244325" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="submit-btn">Kirim Request Bantuan</button>
+                </form>
+            </div>
+        </div>
+        </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Will be added via separate commit due to file size -->
 
     <script>
@@ -829,9 +1003,340 @@
                 modal.classList.remove('active');
                 document.body.style.overflow = 'auto';
             }
+
+        // Initialize Leaflet Maps
+        function initLeafletMap(containerId, type) {
+            const defaultLocation = [-6.2088, 106.8456]; // Jakarta [lat, lng]
+
+            const map = L.map(containerId, {
+                center: defaultLocation,
+                zoom: 13
+            });
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
+
+            const marker = L.marker(defaultLocation, {
+                draggable: true,
+                title: type === 'shelter' ? 'Lokasi Pengungsian' : 'Lokasi Request Bantuan'
+            }).addTo(map);
+
+            marker.on('dragend', function() {
+                const pos = marker.getLatLng();
+                updateCoordinateDisplay(type, pos.lat, pos.lng);
+            });
+
+            updateCoordinateDisplay(type, defaultLocation[0], defaultLocation[1]);
+
+            return { map, marker };
         }
 
-    <script>
+        // Update coordinate display
+        function updateCoordinateDisplay(type, lat, lng) {
+            const latId = type === 'shelter' ? 'shelterLat' : 'requestLat';
+            const lngId = type === 'shelter' ? 'shelterLng' : 'requestLng';
+
+            document.getElementById(latId).textContent = lat.toFixed(6);
+            document.getElementById(lngId).textContent = lng.toFixed(6);
+        }
+
+        // Use My Location function
+        function useMyLocation(type) {
+            if (!navigator.geolocation) {
+                alert('Geolocation tidak didukung oleh browser Anda');
+                return;
+            }
+
+            const button = event.target;
+            button.disabled = true;
+            button.textContent = '🔄 Mendapatkan lokasi...';
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+
+                    if (type === 'shelter' && mapShelter) {
+                        mapShelter.map.setView([lat, lng], 15);
+                        mapShelter.marker.setLatLng([lat, lng]);
+                        updateCoordinateDisplay('shelter', lat, lng);
+                    } else if (type === 'request' && mapRequest) {
+                        mapRequest.map.setView([lat, lng], 15);
+                        mapRequest.marker.setLatLng([lat, lng]);
+                        updateCoordinateDisplay('request', lat, lng);
+                    }
+
+                    button.disabled = false;
+                    button.textContent = '📍 Gunakan Lokasi Saya';
+                },
+                (error) => {
+                    console.error('Geolocation error:', error);
+                    alert('Gagal mendapatkan lokasi. Pastikan Anda memberikan izin lokasi.');
+                    button.disabled = false;
+                    button.textContent = '📍 Gunakan Lokasi Saya';
+                }
+            );
+        }
+
+        // Photo Upload Functions
+        function handlePhotoUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (file.size > 5 * 1024 * 1024) {
+                alert('Ukuran file maksimal 5MB');
+                event.target.value = '';
+                return;
+            }
+
+            if (!file.type.startsWith('image/')) {
+                alert('File harus berupa gambar (JPG, PNG, JPEG)');
+                event.target.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                uploadedPhoto = e.target.result;
+                document.getElementById('previewImage').src = e.target.result;
+                document.getElementById('uploadPrompt').style.display = 'none';
+                document.getElementById('photoPreview').classList.add('show');
+                document.querySelector('.photo-upload-container').classList.add('has-image');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removePhoto(event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            uploadedPhoto = null;
+            document.getElementById('photoInput').value = '';
+            document.getElementById('previewImage').src = '';
+            document.getElementById('uploadPrompt').style.display = 'block';
+            document.getElementById('photoPreview').classList.remove('show');
+            document.querySelector('.photo-upload-container').classList.remove('has-image');
+        }
+
+        // Alert Functions
+        function showAlert(elementId, message, type) {
+            const alert = document.getElementById(elementId);
+            alert.textContent = message;
+            alert.className = `alert ${type} show`;
+            window.scrollTo(0, 0);
+        }
+
+        function hideAlert(elementId) {
+            const alert = document.getElementById(elementId);
+            alert.className = 'alert';
+        }
+
+        // Submit Shelter
+        async function submitShelter(event) {
+            event.preventDefault();
+            const form = event.target;
+            const submitBtn = form.querySelector('.submit-btn');
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Mengirim...';
+
+            const formData = new FormData(form);
+            const position = mapShelter.marker.getLatLng();
+
+            const data = {
+                type: 'PENGUNGSIAN',
+                urgency: 'MEDIUM',
+                reportSource: 'web',
+                reporterPhone: '+62' + formData.get('picPhone'),
+                location: formData.get('address'),
+                latitude: position.lat,
+                longitude: position.lng,
+                shelter: {
+                    name: formData.get('locationName') || formData.get('shelterType'),
+                    type: formData.get('shelterType'),
+                    address: formData.get('address'),
+                    picName: formData.get('picName'),
+                    picPhone: '+62' + formData.get('picPhone'),
+                    capacity: parseInt(formData.get('maleCount') || 0) +
+                             parseInt(formData.get('femaleCount') || 0) +
+                             parseInt(formData.get('childCount') || 0),
+                    currentOccupancy: parseInt(formData.get('maleCount') || 0) +
+                                     parseInt(formData.get('femaleCount') || 0) +
+                                     parseInt(formData.get('childCount') || 0),
+                    maleCount: parseInt(formData.get('maleCount') || 0),
+                    femaleCount: parseInt(formData.get('femaleCount') || 0),
+                    childCount: parseInt(formData.get('childCount') || 0),
+                    refugeeOrigin: formData.get('refugeeOrigin')
+                }
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/api/reports`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showAlert('shelterAlert', 'Data titik pengungsian berhasil dikirim!', 'success');
+                    form.reset();
+                    updateCoordinateDisplay('shelter', -6.2088, 106.8456);
+                } else {
+                    showAlert('shelterAlert', result.error || 'Gagal mengirim data. Silakan coba lagi.', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('shelterAlert', 'Terjadi kesalahan. Silakan coba lagi.', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Kirim Data Pengungsian';
+            }
+        }
+
+        // Submit Missing Person
+        async function submitMissingPerson(event) {
+            event.preventDefault();
+            const form = event.target;
+            const submitBtn = form.querySelector('.submit-btn');
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Mengirim...';
+
+            const formData = new FormData(form);
+
+            const data = {
+                type: 'KORBAN',
+                urgency: 'HIGH',
+                status: 'HILANG',
+                reportSource: 'web',
+                reporterPhone: '+62' + formData.get('familyPhone'),
+                location: formData.get('lastSeenLocation'),
+                latitude: null,
+                longitude: null,
+                person: {
+                    name: formData.get('personName'),
+                    gender: formData.get('gender'),
+                    age: parseInt(formData.get('age')),
+                    idNumber: formData.get('idNumber'),
+                    status: 'HILANG',
+                    condition: formData.get('physicalDescription'),
+                    lastSeenLocation: formData.get('lastSeenLocation'),
+                    province: formData.get('province'),
+                    city: formData.get('city'),
+                    district: formData.get('district'),
+                    village: formData.get('village'),
+                    homeAddress: formData.get('homeAddress'),
+                    familyContact: formData.get('familyName'),
+                    familyPhone: '+62' + formData.get('familyPhone'),
+                    photo: uploadedPhoto
+                }
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/api/reports`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showAlert('missingAlert', 'Laporan orang hilang berhasil dikirim!', 'success');
+                    form.reset();
+                    removePhoto();
+                } else {
+                    showAlert('missingAlert', result.error || 'Gagal mengirim laporan. Silakan coba lagi.', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('missingAlert', 'Terjadi kesalahan. Silakan coba lagi.', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Kirim Laporan Orang Hilang';
+            }
+        }
+
+        // Submit Request Bantuan
+        async function submitRequest(event) {
+            event.preventDefault();
+            const form = event.target;
+            const submitBtn = form.querySelector('.submit-btn');
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Mengirim...';
+
+            const formData = new FormData(form);
+            const position = mapRequest.marker.getLatLng();
+
+            const data = {
+                type: 'BANTUAN',
+                urgency: formData.get('urgency'),
+                reportSource: 'web',
+                reporterPhone: '+62' + formData.get('reporterPhone'),
+                location: formData.get('location'),
+                latitude: position.lat,
+                longitude: position.lng,
+                rawMessage: `${formData.get('requestType')}: ${formData.get('description')}`,
+                summary: formData.get('description').substring(0, 100),
+                assistance: {
+                    type: formData.get('requestType'),
+                    description: formData.get('description'),
+                    urgency: formData.get('urgency'),
+                    location: formData.get('location'),
+                    province: formData.get('province'),
+                    city: formData.get('city'),
+                    district: formData.get('district'),
+                    village: formData.get('village'),
+                    peopleCount: parseInt(formData.get('maleCount') || 0) +
+                                parseInt(formData.get('femaleCount') || 0) +
+                                parseInt(formData.get('childCount') || 0),
+                    maleCount: parseInt(formData.get('maleCount') || 0),
+                    femaleCount: parseInt(formData.get('femaleCount') || 0),
+                    childCount: parseInt(formData.get('childCount') || 0),
+                    reporterName: formData.get('reporterName'),
+                    reporterPhone: '+62' + formData.get('reporterPhone')
+                }
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/api/reports`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showAlert('requestAlert', 'Request bantuan berhasil dikirim! Tim kami akan segera merespons.', 'success');
+                    form.reset();
+                    updateCoordinateDisplay('request', -6.2088, 106.8456);
+                } else {
+                    showAlert('requestAlert', result.error || 'Gagal mengirim request. Silakan coba lagi.', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('requestAlert', 'Terjadi kesalahan. Silakan coba lagi.', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Kirim Request Bantuan';
+            }
+        }
+
+
+        // Original dashboard script continues
         const API_BASE = window.location.origin;
         let token = localStorage.getItem('token');
         let user = JSON.parse(localStorage.getItem('user') || '{}');
