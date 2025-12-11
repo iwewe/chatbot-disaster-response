@@ -55,6 +55,7 @@ FILES=(
     "public-form.html"
     "nginx.conf"
     "logo-cri.png"
+    "rdw-logo.png"
 )
 
 log "Downloading dashboard files from GitHub..."
