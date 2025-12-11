@@ -696,32 +696,25 @@
             font-family: monospace;
         }
 
-        /* Footer */
-        .footer {
-            position: relative;
-            z-index: 10;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-top: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 24px 20px;
+        /* Footer Logo */
+        .footer-logo-container {
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
             text-align: center;
         }
 
         .footer-logo {
-            max-width: 200px;
+            max-width: 180px;
             height: auto;
-            opacity: 0.9;
-            transition: opacity 0.3s ease;
+            opacity: 0.85;
+            transition: all 0.3s ease;
+            filter: brightness(1.1);
         }
 
         .footer-logo:hover {
             opacity: 1;
-        }
-
-        .footer-text {
-            margin-top: 12px;
-            font-size: 0.875rem;
-            color: #6b7280;
+            transform: scale(1.05);
         }
 
         /* Loading animation */
@@ -819,14 +812,13 @@
                 <div class="admin-link">
                     <a href="/index.html">Login untuk Admin →</a>
                 </div>
+
+                <!-- Footer Logo -->
+                <div class="footer-logo-container">
+                    <img src="logo-combine.png" alt="Combine Resource Institution" class="footer-logo">
+                </div>
             </div>
         </div>
-    </div>
-
-    <!-- Footer -->
-    <div class="footer">
-        <img src="https://www.combineindonesia.id/wp-content/uploads/2023/02/logo-Combine-Resource-Institution-300x106-1.png" alt="Combine Resource Institution" class="footer-logo">
-        <p class="footer-text">Powered by Combine Resource Institution</p>
     </div>
 
     <!-- Modal Titik Pengungsian -->
