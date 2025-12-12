@@ -26,7 +26,45 @@ sudo usermod -aG docker $USER
 
 ## 🚀 Deployment Methods
 
-### Method 1: Git Deployment (Recommended)
+### Method 1: Full Stack Deployment (Recommended) ⭐
+
+Deploy lengkap dashboard + backend dengan automatic backup:
+
+```bash
+# One-liner deployment
+curl -fsSL https://raw.githubusercontent.com/iwewe/chatbot-disaster-response/claude/emergency-chatbot-database-015rFTqBPiJaT7MnsyVpSXpf/deploy.sh | bash
+```
+
+**Script akan melakukan:**
+1. ✅ **Backup** - Backup dashboard, backend, dan .env ke `backups/YYYYMMDD_HHMMSS/`
+2. ⬇️ **Download** - Download latest files dari GitHub
+3. 🐳 **Docker** - Rebuild backend dan restart semua services
+4. ✅ **Verify** - Check backend health dan dashboard accessibility
+5. 📊 **Summary** - Display access URLs dan useful commands
+
+**Atau download script dulu:**
+```bash
+cd ~/chatbot-disaster-response
+curl -fsSL https://raw.githubusercontent.com/iwewe/chatbot-disaster-response/claude/emergency-chatbot-database-015rFTqBPiJaT7MnsyVpSXpf/deploy.sh -o deploy.sh
+chmod +x deploy.sh
+./deploy.sh
+```
+
+### Method 2: Dashboard Only Update
+
+Update dashboard saja (tanpa rebuild backend):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/iwewe/chatbot-disaster-response/claude/emergency-chatbot-database-015rFTqBPiJaT7MnsyVpSXpf/quick-update-dashboard.sh | bash
+```
+
+Script akan:
+- Backup dashboard yang ada
+- Download latest dashboard files
+- Restart dashboard service
+- Verify accessibility
+
+### Method 3: Git Deployment
 
 Untuk server dengan Git installed dan akses ke GitHub.
 
@@ -46,7 +84,7 @@ Script akan:
 - Run database migrations
 - Check admin user
 
-### Method 2: Curl Deployment
+### Method 4: Curl Deployment
 
 Untuk server tanpa Git, download langsung dari GitHub.
 
@@ -63,6 +101,45 @@ Script akan:
 - Setup directory structure
 - Build dan start containers
 - Run migrations
+
+## 🔄 Rollback
+
+Jika terjadi masalah setelah deployment, rollback ke backup sebelumnya:
+
+```bash
+# Download rollback script
+curl -fsSL https://raw.githubusercontent.com/iwewe/chatbot-disaster-response/claude/emergency-chatbot-database-015rFTqBPiJaT7MnsyVpSXpf/rollback.sh -o rollback.sh
+chmod +x rollback.sh
+
+# Jalankan rollback (interactive)
+./rollback.sh
+```
+
+Script akan:
+1. List semua backup yang tersedia
+2. Pilih backup yang ingin di-restore
+3. Restore dashboard dan backend files
+4. Rebuild dan restart services
+5. Verify deployment
+
+**Manual rollback ke backup tertentu:**
+```bash
+./rollback.sh 20231211_143025
+```
+
+**Backup structure:**
+```
+backups/
+└── 20231211_143025/
+    ├── dashboard/
+    │   ├── home.html
+    │   ├── dashboard.html
+    │   └── ...
+    ├── backend/
+    │   ├── src/
+    │   └── package.json
+    └── .env
+```
 
 ## ⚙️ Konfigurasi
 
